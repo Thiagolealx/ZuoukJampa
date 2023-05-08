@@ -6,7 +6,7 @@ from django.db import models
 #Criação do atributos de Lote, Categoria e User
 class Lote(models.Model):
     descricao = models.CharField(max_length=20,blank=False, null=False, validators=[MinLengthValidator(5)])
-    valor = models.FloatField(blank=False, null=False)
+    valor_unitario = models.DecimalField(max_digits=8, decimal_places=2)
 
     class Meta:
         verbose_name = "Lote"
@@ -47,3 +47,5 @@ class Congressista(models.Model):
 
     def __str__(self) -> str:
         return self.nome_completo
+
+

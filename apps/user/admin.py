@@ -1,16 +1,15 @@
 from django.contrib import admin
 from .models import Lote, Categoria, Congressista
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
-from django.urls import path
+from django.db.models import Sum
 
+from decimal import Decimal
 class LoteAdmin(admin.ModelAdmin):
 
     list_display = [
         "descricao",
-        "valor",
+        "valor_unitario",
     ]
-    ordering = ["descricao"]
+    ordering = ["valor_unitario"]
 
 admin.site.register(Lote, LoteAdmin)
 
@@ -25,13 +24,23 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 admin.site.register(Categoria, CategoriaAdmin)
 
-class CongressitaAdmin(admin.ModelAdmin):
+class CongressistaAdmin(admin.ModelAdmin):
 
-    list_display = ["nome_completo", "categoria","lote", "ano","uf",]
+    list_display = ["nome_completo", "categoria", "ano", "uf", "lote","get_total_lote"]
     search_fields = ['cep']
-    # def save_model(self, request, obj, form, change):
-    #     obj.buscar_endereco()
+    list_select_related = ['lote']
 
-    ordering = ["lote"]
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_lote=Sum('lote__valor_unitario'))
+        return queryset
 
-admin.site.register(Congressista, CongressitaAdmin)
+    def get_total_lote(self, obj):
+        return Congressista.objects.all().aggregate(Sum('lote__valor_unitario'))['lote__valor_unitario__sum']
+
+
+    get_total_lote.admin_order_field = 'total_lote'
+    get_total_lote.short_description = 'Total Lote'
+
+admin.site.register(Congressista, CongressistaAdmin)
+

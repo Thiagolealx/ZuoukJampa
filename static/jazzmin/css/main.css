@@ -6,96 +6,11 @@
     background-attachment: fixed;
     background-size: cover;
 }
-.checkbox-round {
-    width: 1em;
-    height: 1em;
-    background-color: white;
-    border-radius: 50%;
-    vertical-align: middle;
-    border: 2px solid #ddd;
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-    cursor: pointer;
-    margin-right: 5px;
-}
-
-.checkbox-round:checked {
-    background-color: #4c7f98;
-}
 
 #jazzy-navbar {
     background-color: #4c7f98;
 }
 
-.navbar-dark .navbar-nav .nav-link:focus,
-.navbar-dark .navbar-nav .nav-link:hover {
-    color: #194b69;
-}
-
-.sidebar-dark-lightblue .nav-sidebar>.nav-item>.nav-link.active,
-.sidebar-light-lightblue .nav-sidebar>.nav-item>.nav-link.active {
-    background-color: #4c7f98;
-    color: #fff;
-}
-
-.select2-search--dropdown .select2-search__field {
-    display: none;
-}
-
-.content-row {
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    width: 100%;
-    margin-top: 20px;
-}
-
-.col-lg-9 {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    max-width: 100%;
-    flex: auto;
-}
-
-#legenda {
-    text-align: end;
-    margin-right: 10px;
-    margin-bottom: 10px;
-    font-size: 12px;
-}
-
-
-.card {
-    width: 100%;
-}
-
-.row {
-    display: -ms-flexbox;
-    display: flex;
-    -ms-flex-wrap: wrap;
-    flex-wrap: nowrap;
-    margin-right: -15px;
-    margin-left: -15px;
-}
-
-.accent-primary .btn-link,
-.accent-primary .nav-tabs .nav-link,
-.accent-primary a:not(.dropdown-item):not(.btn-app):not(.nav-link):not(.brand-link):not(.page-link):not(.btn) {
-    color: #194b69;
-    /* color: #205e7f; */
-}
-
-.accent-primary .btn-link,
-.accent-primary .nav-tabs .nav-link,
-.accent-primary a:not(.dropdown-item):not(.btn-app):not(.nav-link):not(.brand-link):not(.page-link):not(.btn):hover {
-    /* color: #194b69; */
-    color: #205e7f;
-}
-
-/** Django-related improvements to AdminLTE UI **/
 
 div.inline-related {
     padding: 10px;
