@@ -1,7 +1,13 @@
+from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
+
+
 from django.db import models
 
-
+def validate_uf(value):
+    if not value.isalpha() or not value.isupper():
+        raise ValidationError(
+            'A UF deve conter apenas letras, sendo elas Maiúsculas')
 
 #Criação do atributos de Lote, Categoria e User
 class Lote(models.Model):
@@ -35,12 +41,18 @@ class Congressista(models.Model):
     categoria = models.ForeignKey(Categoria,on_delete=models.DO_NOTHING,null=True)
     lote = models.ForeignKey(Lote,on_delete=models.DO_NOTHING,null=False)
     ano = models.CharField(max_length=4,blank=False,null=False)
-    cep = models.CharField(max_length=9)
-    logradouro = models.CharField(max_length=300, blank=True, null=False)
-    bairro = models.CharField(max_length=300)
-    cidade = models.CharField(max_length=300)
-    uf = models.CharField(max_length=2)
-    complemento = models.CharField(max_length=300,blank=True,null=False)
+    cep = models.CharField("CEP", max_length=9, blank=True, null=True,
+                           help_text="Digite um CEP válido para atualizar os campos abaixo.")
+    logradouro = models.CharField(
+        "Logradouro", max_length=200, blank=True, null=True)
+    num_endereco = models.CharField(
+        "Número", max_length=10, blank=True, null=True)
+    complemento = models.CharField(max_length=30, blank=True, null=True)
+    bairro = models.CharField(max_length=50, blank=True, null=True)
+    cidade = models.CharField(
+        "Município", max_length=100, blank=True, null=True)
+    uf = models.CharField("UF", max_length=2, blank=True,
+                          null=True, validators=[validate_uf])
 
     class Meta:
         verbose_name = "Congressista"
