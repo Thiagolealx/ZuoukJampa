@@ -28,10 +28,11 @@ admin.site.register(Categoria, CategoriaAdmin)
 
 class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
-    list_display = ["nome_completo", "categoria", "ano", "uf", "lote","get_total_lote"]
+    list_display = ["nome_completo", "categoria", "ano", "uf", "lote"]
     search_fields = ['cep']
     list_select_related = ['lote']
     form = CongressistaFormAdmin
+    change_list_template = "congressita/change_list_congressitas.html"
 
 
     def get_queryset(self, request):
@@ -48,6 +49,20 @@ class CongressistaAdmin(admin.ModelAdmin):
 
     tabs = ("ContratoPessoa",)
     save_on_top = True
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        total_lote = (
+                Congressista.objects.all().aggregate(Sum('lote__valor_unitario'))['lote__valor_unitario__sum'] or 0
+        )
+
+        response.context_data["total_lote"] = total_lote
+
+        return response
 
     class Media:
         js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
