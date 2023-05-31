@@ -4,13 +4,9 @@ from django.db.models import Sum
 
 class ContratosAdmin(admin.ModelAdmin):
 
-    list_display = [
-        "nome_empresa",
-        "nome_contato",
-        "valor_ct",
-        "get_total_contrato"
-    ]
+    list_display = ["nome_empresa", "nome_contato", "valor_ct"]
     ordering = ["nome_empresa"]
+    change_list_template = "balanco/change_list_contrato.html"
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -23,18 +19,31 @@ class ContratosAdmin(admin.ModelAdmin):
     get_total_contrato.admin_order_field = 'total_contrato'
     get_total_contrato.short_description = 'Total Contrato'
 
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        total_contrato = (
+                Contratos.objects.all().aggregate(Sum('valor_ct'))['valor_ct__sum']
+        )
+
+        response.context_data["total_contrato"] = total_contrato
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
 
 admin.site.register(Contratos, ContratosAdmin)
 
 class PatrocinadorsAdmin(admin.ModelAdmin):
 
-    list_display = [
-        "nome_empresa",
-        "valor_pt",
-        "nome_contato",
-        "get_total_patrocinador"
-    ]
+    list_display = ["nome_empresa","valor_pt","nome_contato"]
     ordering = ["nome_empresa"]
+    change_list_template = "balanco/change_list_patrocinio.html"
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -47,19 +56,31 @@ class PatrocinadorsAdmin(admin.ModelAdmin):
     get_total_patrocinador.admin_order_field = 'total_patrocinador'
     get_total_patrocinador.short_description = 'Total Patrocinador'
 
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        total_patrocinador = (
+                Patrocinador.objects.all().aggregate(Sum('valor_pt'))['valor_pt__sum']
+        )
+
+        response.context_data["total_patrocinador"] = total_patrocinador
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
 
 admin.site.register(Patrocinador, PatrocinadorsAdmin)
 
 class ParceirosAdmin(admin.ModelAdmin):
 
-    list_display = [
-        "nome",
-        "uf",
-        "ano",
-        "valor_pc",
-        "get_total_parceiros"
-    ]
+    list_display = ["nome","uf","ano", "valor_pc",]
     ordering = ["nome"]
+    change_list_template = "balanco/change_list_parceiros.html"
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -72,6 +93,23 @@ class ParceirosAdmin(admin.ModelAdmin):
     get_total_parceiros.admin_order_field = 'total_parceiros'
     get_total_parceiros.short_description = 'Total Parceiros'
 
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        total_parceiros = (
+                Parceiros.objects.all().aggregate(Sum('valor_pc'))['valor_pc__sum']
+        )
+
+        response.context_data["total_parceiros"] = total_parceiros
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
 admin.site.register(Parceiros, ParceirosAdmin)
 
 
@@ -83,9 +121,9 @@ class EstoqueAdmin(admin.ModelAdmin):
         "quantidade",
         "valor_unitario",
         "valor_total",
-        "get_total_saidas_estoque"
     ]
     ordering = ["nome_produto"]
+    change_list_template = "balanco/change_list_estoque.html"
 
     def save_model(self, request, obj, form, change):
         obj.valor_total = obj.quantidade * obj.valor_unitario
@@ -101,6 +139,23 @@ class EstoqueAdmin(admin.ModelAdmin):
 
     get_total_saidas_estoque.admin_order_field = 'total_saidas_estoque'
     get_total_saidas_estoque.short_description = 'Total Parceiros'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        total_saidas_estoque = (
+            Estoque.objects.all().aggregate(Sum('valor_total'))['valor_total__sum']
+        )
+
+        response.context_data["total_saidas_estoque"] = total_saidas_estoque
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
 
 
 

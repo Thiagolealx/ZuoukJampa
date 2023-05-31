@@ -4,7 +4,7 @@ class Patrocinador(models.Model):
     nome_empresa = models.CharField(max_length=50, blank=False, null=False)
     nome_contato = models.CharField(max_length=50, blank=False, null=False)
     descricao = models.CharField(max_length=300, blank=True, null=False)
-    valor_pt =  models.DecimalField(max_digits=8, decimal_places=2)
+    valor_pt =  models.DecimalField(verbose_name="Valor da Doação" ,max_digits=8, decimal_places=2)
     comprovante =  models.FileField(upload_to= "", default="",blank=True,null=False)
     ano = models.CharField(max_length=4, blank=False, null=False)
 
@@ -35,7 +35,7 @@ class Contratos(models.Model):
     nome_empresa = models.CharField(max_length=50, blank=False, null=False)
     nome_contato = models.CharField(max_length=50, blank=False, null=False)
     serviço_prestado = models.CharField(max_length=300,blank=True,null=False)
-    valor_ct =  models.DecimalField(max_digits=8, decimal_places=2)
+    valor_ct =  models.DecimalField(verbose_name="Valor do Contrato",max_digits=8, decimal_places=2)
     comprovante = models.FileField(upload_to= "", default="",blank=True,null=False)
     ano = models.CharField(max_length=4, blank=False, null=False)
     #tem um campo que some os valor do contratos
