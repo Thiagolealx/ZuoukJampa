@@ -1,0 +1,65 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load i18n static jazzmin %}
+{% get_jazzmin_ui_tweaks as jazzmin_ui %}
+
+{% block bodyclass %}{{ block.super }} dashboard{% endblock %}
+
+{% block content_title %} {% trans 'Página Inicial' %} {% endblock %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% trans 'Home' %}</a></li>
+        <li class="breadcrumb-item">{% trans 'Página Inicial' %}</li>
+    </ol>
+{% endblock %}
+
+
+{% block content %}
+    {% get_side_menu using="app_list" as dashboard_list %}
+    {% if dashboard_list %}
+        {% widthratio dashboard_list|length 2 1 as middle %}
+    {% endif %}
+
+    <div class="col-lg-9 col-12">
+
+        <div class="content-row">
+            <div class="col-md-6 col-sm-12">
+                {% for app in dashboard_list %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="m-0">{{ app.name }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                {% for model in app.models %}
+                                    <tr>
+                                        <td>
+                                            {% if model.url %}<a href="{{ model.url }}">{{ model.name }}</a>{% else %}{{ model.name }}{% endif %}
+                                        </td>
+
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {% if forloop.counter == middle|add:"0" %}
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                    {% endif %}
+
+                {% endfor %}
+                </div>
+        </div>
+
+    </div>
+
+{% endblock %}
+
+{% block extrahead %}
+    <link rel="stylesheet" href="{% static 'myapp/css/mystyles.css' %}">
+{% endblock %}
+
