@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.user',
     'apps.balanco_geral',
-    'apps.caixa',
 ]
 
 JAZZMIN_SETTINGS = {

@@ -30,3 +30,5 @@ class Saidas(models.Model):
         return self.nome_produto
 
 
+
+

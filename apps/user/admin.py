@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .forms import CongressistaFormAdmin
 from .models import Lote, Categoria, Congressista,Pagamento
@@ -34,7 +35,7 @@ admin.site.register(Categoria, CategoriaAdmin)
 class LancamentoParcelaForm(forms.ModelForm, BaseModelForm):
     class Meta:
         model = Pagamento
-        fields = ['congressista', 'valor_parcela']
+        fields = ['congressista', 'valor_parcela','tipo',]
 
 class PagamentoInline(admin.TabularInline):
     model = Pagamento
@@ -56,13 +57,23 @@ class PagamentoInlineFormSet(BaseInlineFormSet):
 
 class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
-    list_display = ["nome_completo", "categoria", "ano", "uf", "lote"]
-    search_fields = ['cep']
+    list_display = ["nome_completo", "categoria", "ano", "uf", "lote","valor_restante","exibir_status_pagamento"]
+    list_filter =["nome_completo", "categoria", "ano", "uf",]
+    search_fields = ["nome_completo", "categoria", "ano", "uf", "lote","valor_restante","status_pagamento"]
     list_select_related = ['lote']
     form = CongressistaFormAdmin
     change_list_template = "congressita/change_list_congressitas.html"
     inlines = [PagamentoInline]
+    readonly_fields = ['valor_total_parcelas', 'valor_restante']
 
+    def exibir_status_pagamento(self, obj):
+        valor_restante = obj.valor_restante() if callable(obj.valor_restante) else obj.valor_restante
+        if abs(valor_restante) < 0.01:  # Ajuste a tolerância conforme necessário
+            return format_html('<span style="color: green;">Pago</span>')
+        else:
+            return format_html('<span style="color: red;">Pendente</span>')
+
+    exibir_status_pagamento.short_description = 'Status de Pagamento'
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -106,9 +117,9 @@ class PagamentoAdmin(admin.ModelAdmin):
     search_fields = ['tipo']
     list_display = [
         "congressista",
-        "get_valor_lote",
         "data_pagamento",
         "valor_parcela",
+        "get_valor_lote",
     ]
     ordering = ["congressista"]
 
