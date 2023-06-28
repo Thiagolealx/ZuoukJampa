@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
+from django.db.models import Sum
 from django.shortcuts import render
 
 
@@ -54,6 +55,21 @@ class Congressista(models.Model):
     uf = models.CharField("UF", max_length=2, blank=True,
                           null=True, validators=[validate_uf])
 
+    def valor_total_parcelas(self):
+        return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
+
+    @property
+    def valor_restante(self):
+        valor_total = self.lote.valor_unitario
+        valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
+        return valor_total - valor_parcelas
+
+    def status_pagamento(self):
+        if self.valor_restante == 0:
+            return 'Pago'
+        else:
+            return 'Pendente'
+
     class Meta:
         verbose_name = "Congressista"
 
@@ -63,8 +79,16 @@ class Congressista(models.Model):
 
 
 class Pagamento(models.Model):
+
+    TIPO =(
+        ('CARTAO', 'Cartão de Credito'),
+        ('ESPECIE', 'Espécie'),
+        ('PIX', 'Pix'),
+    )
     congressista = models.ForeignKey(Congressista, on_delete=models.CASCADE)
     valor_parcela = models.DecimalField(max_digits=10, decimal_places=2)
+    numero_da_parcela = models.IntegerField(max_length=2,blank=False,null=False)
+    tipo =models.CharField("Tipo de Pagamento", max_length=20, choices=TIPO)
     data_pagamento = models.DateField(auto_now_add=True)
 
     class Meta:
@@ -74,6 +98,8 @@ class Pagamento(models.Model):
 
     def __str__(self) -> str:
         return f"{self.congressista.nome_completo} - {self.data_pagamento}"
+
+
 
 
 
