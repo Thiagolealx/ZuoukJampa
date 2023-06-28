@@ -54,7 +54,8 @@ JAZZMIN_SETTINGS = {
     'icons': {
             'user.Congressista': 'fas fa-users',
             'user.Categoria': 'fas fa-address-book',
-            'user.Lote': 'fas fa-bars'
+            'user.Lote': 'fas fa-bars',
+            'user.Pagamento': 'fas fa-university'
     },
 "order_with_respect_to": ["usuario","congressista","categoria","lote"]
 }

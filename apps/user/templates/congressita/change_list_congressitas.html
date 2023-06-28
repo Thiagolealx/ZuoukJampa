@@ -91,11 +91,18 @@
                                             <tbody>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right">
-                                                        <strong>Valor Total dos lotes :</strong>
+                                                        <strong>Valor Total pra receber vendido :</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="150px">
                                                         <strong>R$ {{ total_lote }}</strong>
                                                     </td>
+                                                    <td class="total-cell text-right">
+                                                        <strong>Valor Total em Caixa :</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="150px">
+                                                        <strong>R$ {{ get_total_parcelas }}</strong>
+                                                    </td>
+
                                                 </tr>
                                             </tbody>
                                         </table>

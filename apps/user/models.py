@@ -58,9 +58,10 @@ class Congressista(models.Model):
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
 
+    @property
     def valor_restante(self):
-        valor_total = self.lote.valor_unitario  # Supondo que você tenha um campo 'valor_total' no modelo 'Lote'
-        valor_parcelas = self.valor_total_parcelas()
+        valor_total = self.lote.valor_unitario
+        valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
         return valor_total - valor_parcelas
 
     def status_pagamento(self):
@@ -86,6 +87,7 @@ class Pagamento(models.Model):
     )
     congressista = models.ForeignKey(Congressista, on_delete=models.CASCADE)
     valor_parcela = models.DecimalField(max_digits=10, decimal_places=2)
+    numero_da_parcela = models.IntegerField(max_length=2,blank=False,null=False)
     tipo =models.CharField("Tipo de Pagamento", max_length=20, choices=TIPO)
     data_pagamento = models.DateField(auto_now_add=True)
 
