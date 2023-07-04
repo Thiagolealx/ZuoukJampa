@@ -1,3 +1,5 @@
+from datetime import timezone
+
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 from django.db.models import Sum
@@ -54,6 +56,9 @@ class Congressista(models.Model):
         "Município", max_length=100, blank=True, null=True)
     uf = models.CharField("UF", max_length=2, blank=True,
                           null=True, validators=[validate_uf])
+    proxima_parcela = models.DateField(blank=True, null=True)
+
+    numero_parcelass = models.IntegerField(blank=True, null=True)
 
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
@@ -69,6 +74,19 @@ class Congressista(models.Model):
             return 'Pago'
         else:
             return 'Pendente'
+
+    def calcular_proxima_parcela(self):
+        if self.pagamento_set.exists():
+            data_ultima_parcela = self.pagamento_set.latest('data_pagamento').data_pagamento
+            proxima_parcela = data_ultima_parcela + timezone.timedelta(days=30)
+        else:
+            # Se ainda não houver pagamentos, a próxima parcela será 30 dias a partir da data atual
+            proxima_parcela = timezone.now() + timezone.timedelta(days=30)
+        return proxima_parcela
+
+    @property
+    def numero_parcelas(self):
+        return self.pagamento_set.count()
 
     class Meta:
         verbose_name = "Congressista"
@@ -87,7 +105,7 @@ class Pagamento(models.Model):
     )
     congressista = models.ForeignKey(Congressista, on_delete=models.CASCADE)
     valor_parcela = models.DecimalField(max_digits=10, decimal_places=2)
-    numero_da_parcela = models.IntegerField(max_length=2,blank=False,null=False)
+    numero_da_parcela = models.IntegerField(blank=False,null=False)
     tipo =models.CharField("Tipo de Pagamento", max_length=20, choices=TIPO)
     data_pagamento = models.DateField(auto_now_add=True)
 

@@ -57,13 +57,31 @@ class PagamentoInlineFormSet(BaseInlineFormSet):
 
 class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
-    list_display = ["nome_completo", "categoria", "ano", "uf", "lote","valor_restante","exibir_status_pagamento",]
+    list_display = [
+        "nome_completo",
+        "categoria",
+        "ano",
+        "uf",
+        "lote",
+        "valor_restante",
+        "exibir_status_pagamento",
+        "proxima_parcela",
+        "numero_parcelas",
+    ]
+    list_filter = [
+        "categoria",
+        "ano",
+        "uf",
+        "lote",
+        "proxima_parcela",
+        "numero_parcelass"]
     list_select_related = ['lote']
     form = CongressistaFormAdmin
     change_list_template = "congressita/change_list_congressitas.html"
     inlines = [PagamentoInline]
     readonly_fields = ['valor_total_parcelas', 'valor_restante']
     list_max_show_all = 20
+
 
     def exibir_status_pagamento(self, obj):
         valor_restante = obj.valor_restante() if callable(obj.valor_restante) else obj.valor_restante
