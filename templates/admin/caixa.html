@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+  <div class="caixa">
+    <h1>Caixa</h1>
+    <table>
+      <tr>
+        <th>Total Parcelas</th>
+        <th>Total Entrada</th>
+        <th>Total Saída</th>
+        <th>Valor Total em Caixa</th>
+      </tr>
+      <tr>
+        <td>{{ total_parcelas }}</td>
+        <td>{{ total_entrada }}</td>
+        <td>{{ total_saida }}</td>
+        <td>{{ valor_total_caixa }}</td>
+      </tr>
+    </table>
+  </div>
+{% endblock %}

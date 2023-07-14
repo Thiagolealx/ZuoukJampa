@@ -1,8 +1,11 @@
+from os import path
+
 from django.contrib import admin
+from django.shortcuts import render
 from django.utils.html import format_html
 
 from .forms import CongressistaFormAdmin
-from .models import Lote, Categoria, Congressista,Pagamento
+from .models import Lote, Categoria, Congressista,Pagamento, Entrada, Saida
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.db.models import Sum
@@ -192,11 +195,83 @@ class StatusPagamentoFilter(admin.SimpleListFilter):
             return queryset.filter(valor_restante=0)
 
 
+class EntradaAdmin(admin.ModelAdmin):
+    list_display = ["descricao", "quantidade", "ano", "nome_empresa", "get_valor_total"]
+    list_filter = ["ano"]
+    search_fields = ["descricao", "nome_empresa"]
+    ordering = ["descricao"]
+    readonly_fields = ["calcular_valor_total"]
+
+    def calcular_valor_total(self, obj):
+        return obj.valor_unitario * obj.quantidade
+
+    calcular_valor_total.short_description = "Valor Total"
+
+    def get_valor_total(self, obj):
+        return obj.valor_unitario * obj.quantidade
+
+    get_valor_total.short_description = "Valor Total"
+
+    def save_model(self, request, obj, form, change):
+        obj.valor_total = self.calcular_valor_total(obj)
+        super().save_model(request, obj, form, change)
 
 
+class SaidaAdmin(admin.ModelAdmin):
+    list_display = ["descricao", "quantidade", "ano", "nome_empresa", "get_valor_total"]
+    list_filter = ["ano"]
+    search_fields = ["descricao", "nome_empresa"]
+    ordering = ["descricao"]
+    readonly_fields = ["calcular_valor_total"]
+
+    def calcular_valor_total(self, obj):
+        return obj.valor_unitario * obj.quantidade
+
+    calcular_valor_total.short_description = "Valor Total"
+
+    def get_valor_total(self, obj):
+        return obj.valor_unitario * obj.quantidade
+
+    get_valor_total.short_description = "Valor Total"
+
+    def save_model(self, request, obj, form, change):
+        obj.valor_total = self.calcular_valor_total(obj)
+        super().save_model(request, obj, form, change)
+
+admin.site.register(Entrada, EntradaAdmin)
+admin.site.register(Saida, SaidaAdmin)
 
 
-
-
-
-
+# class CaixaAdmin(admin.AdminSite):
+#     site_header = 'Meu Site Administrativo'
+#
+#     def get_caixa_total(self):
+#         total_parcelas = Congressista.objects.aggregate(total=Sum('get_total_parcelas'))['total'] or 0
+#         total_entrada = Entrada.objects.aggregate(total=Sum('calcular_valor_total'))['total'] or 0
+#         total_saida = Saida.objects.aggregate(total=Sum('calcular_valor_total'))['total'] or 0
+#         caixa_total = total_parcelas + total_entrada - total_saida
+#         return caixa_total
+#
+#     def caixa_view(self, request):
+#         context = {
+#             'caixa_total': self.get_caixa_total(),
+#         }
+#         return render(request, 'admin/caixa.html', context)
+#
+# caixa_admin_site = CaixaAdmin(name='caixa_admin')
+# caixa_admin_site.register(Entrada, EntradaAdmin)
+# caixa_admin_site.register(Saida, SaidaAdmin)
+#
+# urlpatterns = [
+#     path('caixa/', caixa_admin_site.caixa_view, name='caixa'),
+# ]
+# admin.site.register(Entrada, EntradaAdmin)
+# admin.site.register(Saida, SaidaAdmin)
+# admin.site.register_site('caixa_admin', caixa_admin_site)
+#
+#
+#
+#
+#
+#
+#

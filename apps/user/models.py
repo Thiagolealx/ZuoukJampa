@@ -117,6 +117,47 @@ class Pagamento(models.Model):
     def __str__(self) -> str:
         return f"{self.congressista.nome_completo} - {self.data_pagamento}"
 
+class Entrada(models.Model):
+    descricao = models.CharField(max_length=100, blank=True, null=True)
+    valor_unitario = models.DecimalField(verbose_name= "Valor",max_digits=10, decimal_places=2)
+    quantidade = models.IntegerField(blank=False, null=False)
+    ano = models.IntegerField(max_length=4, blank=False, null=False)
+    nome_empresa = models.CharField(max_length=100)
+    comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
+
+
+    def calcular_valor_total(self):
+        if self.valor_unitario is not None and self.quantidade is not None:
+            return self.valor_unitario * self.quantidade
+        return 0
+
+    def save(self, *args, **kwargs):
+        self.valor_total = self.calcular_valor_total()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.descricao
+
+class Saida(models.Model):
+    descricao = models.CharField(max_length=100,blank=True, null=False)
+    valor_unitario = models.DecimalField(verbose_name="Valor",max_digits=10, decimal_places=2)
+    quantidade = models.IntegerField(blank=False, null=False)
+    ano = models.IntegerField(max_length=4, blank=False, null=False)
+    nome_empresa = models.CharField(max_length=100,blank=True, null=True)
+    comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
+
+    def calcular_valor_total(self):
+        if self.valor_unitario is not None and self.quantidade is not None:
+            return self.valor_unitario * self.quantidade
+        return 0
+
+    def save(self, *args, **kwargs):
+        self.valor_total = self.calcular_valor_total()
+        super().save(*args, **kwargs)
+    def __str__(self):
+        return self.descricao
+
+
 
 
 
