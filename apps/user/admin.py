@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.utils.html import format_html
 
 from .forms import CongressistaFormAdmin
-from .models import Lote, Categoria, Congressista,Pagamento, Entrada, Saida
+from .models import Lote, Categoria, Congressista, Pagamento, Entrada, Saida, Caixa
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.db.models import Sum
@@ -84,8 +84,6 @@ class CongressistaAdmin(admin.ModelAdmin):
     inlines = [PagamentoInline]
     readonly_fields = ['valor_total_parcelas', 'valor_restante']
     list_max_show_all = 20
-
-
     def exibir_status_pagamento(self, obj):
         valor_restante = obj.valor_restante() if callable(obj.valor_restante) else obj.valor_restante
         if abs(valor_restante) < 0.01:  # Ajuste a tolerância conforme necessário
@@ -132,6 +130,10 @@ class CongressistaAdmin(admin.ModelAdmin):
         total_parcelas = Congressista.objects.aggregate(total=Sum('pagamento__valor_parcela'))['total']
         return total_parcelas or 0
 
+    def save(self, *args, **kwargs):
+        self.total_parcelas = self.get_total_parcelas()
+        super().save(*args, **kwargs)
+
     get_total_parcelas.admin_order_field = 'valor_total_parcelas'
     get_total_parcelas.short_description = 'Total Parcelas'
 
@@ -150,6 +152,11 @@ class CongressistaAdmin(admin.ModelAdmin):
         response.context_data["get_total_parcelas"] = get_total_parcelas
 
         return response
+
+    # def save_model(self, request, obj, form, change):
+    #     obj.atualizar_total_parcelas()  # Chama o método para atualizar o campo total_parcelas
+    #     obj.save()  # Salva o objeto com o campo total_parcelas atualizado
+    #     super().save_model(request, obj, form, change)
 
     class Media:
         js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
@@ -196,82 +203,95 @@ class StatusPagamentoFilter(admin.SimpleListFilter):
 
 
 class EntradaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "quantidade", "ano", "nome_empresa", "get_valor_total"]
+    list_display = ["descricao", "quantidade", "ano", "nome_empresa","valor_total_entrada"]
     list_filter = ["ano"]
     search_fields = ["descricao", "nome_empresa"]
     ordering = ["descricao"]
-    readonly_fields = ["calcular_valor_total"]
+    change_list_template = "congressita/change_list_entradas.html"
 
-    def calcular_valor_total(self, obj):
-        return obj.valor_unitario * obj.quantidade
-
-    calcular_valor_total.short_description = "Valor Total"
-
-    def get_valor_total(self, obj):
-        return obj.valor_unitario * obj.quantidade
-
-    get_valor_total.short_description = "Valor Total"
 
     def save_model(self, request, obj, form, change):
-        obj.valor_total = self.calcular_valor_total(obj)
-        super().save_model(request, obj, form, change)
+        obj.valor_total_entrada = obj.valor_unitario * obj.quantidade
+        obj.save()
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_saidas=Sum('valor_total_entrada'))
+        return queryset
+
+    def get_total_entradas(self, obj):
+        return Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+
+    get_total_entradas.admin_order_field = 'get_total_entradas'
+    get_total_entradas.short_description = 'Total Entradas'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        get_total_entradas = (
+            Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+        )
+
+        response.context_data["get_total_entradas"] = get_total_entradas
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
 
 
 class SaidaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "quantidade", "ano", "nome_empresa", "get_valor_total"]
+    list_display = ["descricao", "quantidade", "ano", "nome_empresa","valor_total_saida" ]
     list_filter = ["ano"]
     search_fields = ["descricao", "nome_empresa"]
     ordering = ["descricao"]
-    readonly_fields = ["calcular_valor_total"]
-
-    def calcular_valor_total(self, obj):
-        return obj.valor_unitario * obj.quantidade
-
-    calcular_valor_total.short_description = "Valor Total"
-
-    def get_valor_total(self, obj):
-        return obj.valor_unitario * obj.quantidade
-
-    get_valor_total.short_description = "Valor Total"
+    change_list_template = "congressita/change_list_saidas.html"
 
     def save_model(self, request, obj, form, change):
-        obj.valor_total = self.calcular_valor_total(obj)
-        super().save_model(request, obj, form, change)
+        obj.valor_total_saida = obj.valor_unitario * obj.quantidade
+        obj.save()
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_saidas=Sum('valor_total_saida'))
+        return queryset
+
+    def get_total_saida(self, obj):
+        return Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+
+    get_total_saida.admin_order_field = 'get_total_saida'
+    get_total_saida.short_description = 'Total Saidas'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        get_total_saida = (
+            Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+        )
+
+        response.context_data["get_total_saida"] = get_total_saida
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
 
 admin.site.register(Entrada, EntradaAdmin)
 admin.site.register(Saida, SaidaAdmin)
 
 
-# class CaixaAdmin(admin.AdminSite):
-#     site_header = 'Meu Site Administrativo'
-#
-#     def get_caixa_total(self):
-#         total_parcelas = Congressista.objects.aggregate(total=Sum('get_total_parcelas'))['total'] or 0
-#         total_entrada = Entrada.objects.aggregate(total=Sum('calcular_valor_total'))['total'] or 0
-#         total_saida = Saida.objects.aggregate(total=Sum('calcular_valor_total'))['total'] or 0
-#         caixa_total = total_parcelas + total_entrada - total_saida
-#         return caixa_total
-#
-#     def caixa_view(self, request):
-#         context = {
-#             'caixa_total': self.get_caixa_total(),
-#         }
-#         return render(request, 'admin/caixa.html', context)
-#
-# caixa_admin_site = CaixaAdmin(name='caixa_admin')
-# caixa_admin_site.register(Entrada, EntradaAdmin)
-# caixa_admin_site.register(Saida, SaidaAdmin)
-#
-# urlpatterns = [
-#     path('caixa/', caixa_admin_site.caixa_view, name='caixa'),
-# ]
-# admin.site.register(Entrada, EntradaAdmin)
-# admin.site.register(Saida, SaidaAdmin)
-# admin.site.register_site('caixa_admin', caixa_admin_site)
-#
-#
-#
-#
-#
-#
-#
+
+
+class CaixaAdmin(admin.ModelAdmin):
+   
+    readonly_fields = ['congressitas', 'entradas','saidas','saldo']
+    change_list_template = "congressita/change_list_caixa.html"
+
+admin.site.register(Caixa, CaixaAdmin)

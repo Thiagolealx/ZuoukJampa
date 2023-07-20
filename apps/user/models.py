@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 from django.db.models import Sum
 from django.shortcuts import render
+from decimal import Decimal
 
 
 from django.db import models
@@ -59,7 +60,7 @@ class Congressista(models.Model):
     proxima_parcela = models.DateField(blank=True, null=True)
 
     numero_parcelass = models.IntegerField(blank=True, null=True)
-
+    total_parcelas = models.FloatField(default=0.0)
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
 
@@ -82,7 +83,8 @@ class Congressista(models.Model):
         else:
             # Se ainda não houver pagamentos, a próxima parcela será 30 dias a partir da data atual
             proxima_parcela = timezone.now() + timezone.timedelta(days=30)
-        return proxima_parcela
+        return proxima_parcela   
+
 
     @property
     def numero_parcelas(self):
@@ -124,6 +126,7 @@ class Entrada(models.Model):
     ano = models.IntegerField(max_length=4, blank=False, null=False)
     nome_empresa = models.CharField(max_length=100)
     comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
+    valor_total_entrada = models.FloatField(blank=True, null=False, editable=False)
 
 
     def calcular_valor_total(self):
@@ -145,6 +148,7 @@ class Saida(models.Model):
     ano = models.IntegerField(max_length=4, blank=False, null=False)
     nome_empresa = models.CharField(max_length=100,blank=True, null=True)
     comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
+    valor_total_saida = models.FloatField(blank=True, null=False, editable=False)
 
     def calcular_valor_total(self):
         if self.valor_unitario is not None and self.quantidade is not None:
@@ -154,8 +158,34 @@ class Saida(models.Model):
     def save(self, *args, **kwargs):
         self.valor_total = self.calcular_valor_total()
         super().save(*args, **kwargs)
+
     def __str__(self):
         return self.descricao
+
+class Caixa (models.Model):    
+
+    @property
+    def congressitas(self):
+        return Pagamento.objects.aggregate(total=Sum('valor_parcela'))['total'] or 0
+    
+    @property
+    def entradas(self):
+        return Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+    
+    @property
+    def saidas(self):
+        return Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+
+    @property
+    def saldo(self):
+        return Decimal(self.congressitas) + Decimal(self.entradas) - Decimal(self.saidas)
+
+    
+    def __str__(self):
+        return self.congressitas
+
+
+
 
 
 
