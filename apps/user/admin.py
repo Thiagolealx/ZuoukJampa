@@ -293,5 +293,45 @@ class CaixaAdmin(admin.ModelAdmin):
    
     readonly_fields = ['congressitas', 'entradas','saidas','saldo']
     change_list_template = "congressita/change_list_caixa.html"
+    list_display = ['congressitas', 'entradas','saidas','saldo']
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+    def changelist_view(self, request, extra_context=None):
+            response = super().changelist_view(request, extra_context=extra_context)
+            try:
+                qs = response.context_data["cl"].queryset
+            except (AttributeError, KeyError):
+                return response
+
+            total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+            get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
+                'total_parcelas']
+            get_total_entradas= (
+                Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+            )
+            get_total_saida = (
+            Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+        )
+
+            saldo = Decimal(get_total_parcelas or 0) + Decimal(get_total_entradas or 0) - Decimal(get_total_saida or 0)
+
+            
+        
+
+            response.context_data["total_lote"] = total_lote
+            response.context_data["get_total_parcelas"] = get_total_parcelas
+            response.context_data["get_total_entradas"] = get_total_entradas
+            response.context_data["get_total_saida"] = get_total_saida    
+            response.context_data["saldo"] = saldo  
+    
+
+            return response
+
+
+
+
 
 admin.site.register(Caixa, CaixaAdmin)
