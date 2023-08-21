@@ -12,6 +12,8 @@ from django.db.models import Sum
 from django.forms.models import BaseModelForm
 from django import forms
 from django.forms.models import BaseInlineFormSet
+import docx
+from django.http import HttpResponse
 
 from decimal import Decimal
 class LoteAdmin(admin.ModelAdmin):
@@ -152,12 +154,33 @@ class CongressistaAdmin(admin.ModelAdmin):
         response.context_data["get_total_parcelas"] = get_total_parcelas
 
         return response
+# Criação do relatorio
 
-    # def save_model(self, request, obj, form, change):
-    #     obj.atualizar_total_parcelas()  # Chama o método para atualizar o campo total_parcelas
-    #     obj.save()  # Salva o objeto com o campo total_parcelas atualizado
-    #     super().save_model(request, obj, form, change)
+    actions = ['gerar_relatorio_word']
 
+    def gerar_relatorio_word(self, request, queryset):
+        # Crie um documento Word
+        doc = docx.Document()
+
+        # Adicione um título
+        doc.add_heading('Relatório de Congressistas', level=1)
+
+        # Adicione os detalhes dos congressistas selecionados
+        for congressista in queryset:
+            paragrafo = doc.add_paragraph()
+            paragrafo.add_run(f'Nome Completo: {congressista.nome_completo}')
+            paragrafo.add_run(f'\nCategoria: {congressista.categoria}')
+            paragrafo.add_run(f'\nUF: {congressista.uf}')
+            paragrafo.add_run('\n' + '=' * 40)  # Linha separadora entre os registros
+
+        # Crie uma resposta HTTP com o conteúdo do documento Word
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_congressistas.docx"'
+        doc.save(response)
+
+        return response
+
+    gerar_relatorio_word.short_description = "Gerar Relatório Word"
     class Media:
         js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
 
