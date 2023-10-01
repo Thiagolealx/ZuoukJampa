@@ -15,7 +15,9 @@ from django.forms.models import BaseInlineFormSet
 import docx
 from django.http import HttpResponse
 
+
 from decimal import Decimal
+
 class LoteAdmin(admin.ModelAdmin):
 
     list_display = [
@@ -59,6 +61,8 @@ class PagamentoInlineFormSet(BaseInlineFormSet):
         obj = super().save_new(form, commit=False)
         obj.save()
         return obj
+    
+
 
 class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
@@ -68,26 +72,48 @@ class CongressistaAdmin(admin.ModelAdmin):
         "ano",
         "uf",
         "lote",
-        "valor_restante",
+        "get_valor_restante",
         "exibir_status_pagamento",
         "proxima_parcela",
         "numero_parcelas",
     ]
     list_filter = [
-        "categoria",
-        "ano",
+        "nome_completo",
+        "cpf",        
         "uf",
-        "lote",
-        "proxima_parcela",
-        "numero_parcelass"]
+        "categoria",          
+     #"status_pagamento",
+        ]
     list_select_related = ['lote']
+    
     form = CongressistaFormAdmin
     change_list_template = "congressita/change_list_congressitas.html"
     inlines = [PagamentoInline]
-    readonly_fields = ['valor_total_parcelas', 'valor_restante']
+    readonly_fields = ['valor_total_parcelas', 'get_valor_restante']
     list_max_show_all = 20
+
+    # class StatusPagamentoFilter(admin.SimpleListFilter):
+    #     title = _('Status de Pagamento')
+    #     parameter_name = 'status_pagamento'
+
+    #     def lookups(self, request, model_admin):
+    #         return (
+    #             ('pago', _('Pago')),
+    #             ('pendente', _('Pendente')),
+    #         )
+
+    #     def queryset(self, request, queryset):
+    #         if self.value() == 'pago':
+    #             return queryset.filter(valor_restante=0)
+    #         elif self.value() == 'pendente':
+    #             return queryset.exclude(valor_restante=0)
+
+    def get_valor_restante(self, obj):
+        return obj.get_valor_restante()
+    get_valor_restante.short_description = 'Valor Restante'
+
     def exibir_status_pagamento(self, obj):
-        valor_restante = obj.valor_restante() if callable(obj.valor_restante) else obj.valor_restante
+        valor_restante = obj.get_valor_restante()
         if abs(valor_restante) < 0.01:  # Ajuste a tolerância conforme necessário
             return format_html('<span style="color: green;">Pago</span>')
         else:
@@ -95,23 +121,23 @@ class CongressistaAdmin(admin.ModelAdmin):
 
     exibir_status_pagamento.short_description = 'Status de Pagamento'
 
-    def get_list_filter(self, request):
-        return (StatusPagamentoFilter, 'ano', 'categoria','nome_completo',)
 
-    def get_valor_restante(self, obj):
-        return obj.valor_restante
-
-    get_valor_restante.admin_order_field = 'valor_restante'
-    get_valor_restante.short_description = 'Valor Restante'
+    # def get_list_filter(self, request):
+    #     return [
+    #         ('status_pagamento', admin.AllValuesFieldListFilter),
+    #         'ano',
+    #         'categoria',
+    #         'nome_completo',
+    #     ]    
 
     def status_pagamento(self, obj):
-        if obj.valor_restante == 0:
-            return _('Pago')
+        if obj.get_valor_restante() == 0:
+            return 'Pago'
         else:
-            return _('Pendente')
+            return 'Pendente'
 
     status_pagamento.admin_order_field = 'valor_restante'
-    status_pagamento.short_description = _('Status de Pagamento')
+    status_pagamento.short_description = 'Status de Pagamento'    
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -159,19 +185,32 @@ class CongressistaAdmin(admin.ModelAdmin):
     actions = ['gerar_relatorio_word']
 
     def gerar_relatorio_word(self, request, queryset):
+        # Obtém a UF selecionada do request GET
+        uf_filter = request.GET.get('uf')
+
         # Crie um documento Word
         doc = docx.Document()
 
         # Adicione um título
         doc.add_heading('Relatório de Congressistas', level=1)
 
+        # Filtra os congressistas com base na UF selecionada
+        congressistas = queryset.filter(uf=uf_filter) if uf_filter else queryset
+
+        # Ordene os congressistas por nome completo
+        congressistas = congressistas.order_by('nome_completo')
+
+        # Inicialize um contador
+        contador = 1
+
         # Adicione os detalhes dos congressistas selecionados
-        for congressista in queryset:
+        for congressista in congressistas:
             paragrafo = doc.add_paragraph()
-            paragrafo.add_run(f'Nome Completo: {congressista.nome_completo}')
-            paragrafo.add_run(f'\nCategoria: {congressista.categoria}')
-            paragrafo.add_run(f'\nUF: {congressista.uf}')
-            paragrafo.add_run('\n' + '=' * 40)  # Linha separadora entre os registros
+            paragrafo.add_run(f' {contador}')
+            paragrafo.add_run(f'{congressista.nome_completo}')           
+            # paragrafo.add_run(f'\nUF: {congressista.uf}')
+            contador += 1
+            # paragrafo.add_run('\n' + '=' * 40)  # Linha separadora entre os registros
 
         # Crie uma resposta HTTP com o conteúdo do documento Word
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')

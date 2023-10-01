@@ -41,7 +41,7 @@ class Congressista(models.Model):
 
     nome_completo = models.CharField(max_length=50, blank=False,null=False)
     cpf = models.CharField(max_length=11,blank=False,null=False)
-    contato = models.IntegerField(blank=True,null=True)
+    contato = models.FloatField(max_length=15,blank=True,null=True)
     categoria = models.ForeignKey(Categoria,on_delete=models.DO_NOTHING,null=True)
     lote = models.ForeignKey(Lote,on_delete=models.DO_NOTHING,null=False)
     ano = models.CharField(max_length=4,blank=False,null=False)
@@ -64,8 +64,13 @@ class Congressista(models.Model):
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
 
-    @property
-    def valor_restante(self):
+    # @property
+    # def valor_restante(self):
+    #     valor_total = self.lote.valor_unitario
+    #     valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
+    #     return valor_total - valor_parcelas
+    
+    def get_valor_restante(self):
         valor_total = self.lote.valor_unitario
         valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
         return valor_total - valor_parcelas
@@ -120,25 +125,50 @@ class Pagamento(models.Model):
         return f"{self.congressista.nome_completo} - {self.data_pagamento}"
 
 class Entrada(models.Model):
+    """
+    Represents an entry in a financial system.
+
+    Fields:
+    - descricao: CharField to store the description of the entry.
+    - valor_unitario: DecimalField to store the unit price of the entry.
+    - quantidade: IntegerField to store the quantity of the entry.
+    - ano: IntegerField to store the year of the entry.
+    - nome_empresa: CharField to store the name of the company associated with the entry.
+    - comprovante: ImageField to store the receipt image of the entry.
+    - valor_total_entrada: FloatField to store the calculated total value of the entry. This field is editable=False, meaning it cannot be directly modified by users.
+    """
+
     descricao = models.CharField(max_length=100, blank=True, null=True)
-    valor_unitario = models.DecimalField(verbose_name= "Valor",max_digits=10, decimal_places=2)
+    valor_unitario = models.DecimalField(verbose_name="Valor", max_digits=10, decimal_places=2)
     quantidade = models.IntegerField(blank=False, null=False)
     ano = models.IntegerField(blank=False, null=False)
     nome_empresa = models.CharField(max_length=100)
-    comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
+    comprovante = models.ImageField(upload_to='comprovantes/', blank=True, null=False)
     valor_total_entrada = models.FloatField(blank=True, null=False, editable=False)
 
-
     def calcular_valor_total(self):
+        """
+        Calculates the total value of the entry.
+
+        Returns:
+        - The total value of the entry (unit price * quantity) if both unit price and quantity are not None.
+        - 0 otherwise.
+        """
         if self.valor_unitario is not None and self.quantidade is not None:
             return self.valor_unitario * self.quantidade
         return 0
 
     def save(self, *args, **kwargs):
-        self.valor_total = self.calcular_valor_total()
+        """
+        Overrides the default save method to calculate the total value of the entry before saving it to the database.
+        """
+        self.valor_total_entrada = self.calcular_valor_total()
         super().save(*args, **kwargs)
 
     def __str__(self):
+        """
+        Returns a string representation of the entry description.
+        """
         return self.descricao
 
 class Saida(models.Model):
