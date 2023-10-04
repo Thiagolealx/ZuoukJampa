@@ -13,6 +13,8 @@ from django.forms.models import BaseModelForm
 from django import forms
 from django.forms.models import BaseInlineFormSet
 import docx
+import openpyxl
+from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 
 
@@ -182,8 +184,7 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 # Criação do relatorio
 
-    actions = ['gerar_relatorio_word']
-
+    actions = ['gerar_relatorio_word', 'gerar_relatorio_excel']
     def gerar_relatorio_word(self, request, queryset):
         # Obtém a UF selecionada do request GET
         uf_filter = request.GET.get('uf')
@@ -206,8 +207,8 @@ class CongressistaAdmin(admin.ModelAdmin):
         # Adicione os detalhes dos congressistas selecionados
         for congressista in congressistas:
             paragrafo = doc.add_paragraph()
-            paragrafo.add_run(f' {contador}')
-            paragrafo.add_run(f'{congressista.nome_completo}')           
+            paragrafo.add_run(f'  {contador}')
+            paragrafo.add_run(f' {congressista.nome_completo}')
             # paragrafo.add_run(f'\nUF: {congressista.uf}')
             contador += 1
             # paragrafo.add_run('\n' + '=' * 40)  # Linha separadora entre os registros
@@ -220,6 +221,43 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 
     gerar_relatorio_word.short_description = "Gerar Relatório Word"
+
+    def gerar_relatorio_excel(self, request, queryset):
+        # Obtém a UF selecionada do request GET
+        uf_filter = request.GET.get('uf')
+
+        # Crie um novo workbook do Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Relatório de Congressistas'
+
+        # Crie os cabeçalhos das colunas
+        headers = ['Número', 'Nome Completo', 'UF']
+        for col_num, header in enumerate(headers, 1):
+            col_letter = get_column_letter(col_num)
+            ws[f"{col_letter}1"] = header
+
+        # Filtra os congressistas com base na UF selecionada
+        congressistas = queryset.filter(uf=uf_filter) if uf_filter else queryset
+
+        # Ordene os congressistas por nome completo
+        congressistas = congressistas.order_by('nome_completo')
+
+        # Preencha os dados dos congressistas
+        for row_num, congressista in enumerate(congressistas, 2):
+            ws[f"A{row_num}"] = row_num - 1  # Número
+            ws[f"B{row_num}"] = congressista.nome_completo  # Nome Completo
+            ws[f"C{row_num}"] = congressista.uf  # UF
+            ws[f"D{row_num}"] = congressista.lote.valor_unitario  # Valor
+
+        # Crie uma resposta HTTP com o conteúdo do arquivo Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_congressistas.xlsx"'
+        wb.save(response)
+
+        return response
+
+    gerar_relatorio_excel.short_description = "Gerar Relatório Excel"
     class Media:
         js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
 
