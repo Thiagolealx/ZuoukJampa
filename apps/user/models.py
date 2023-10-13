@@ -63,12 +63,6 @@ class Congressista(models.Model):
     total_parcelas = models.FloatField(default=0.0)
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
-
-    # @property
-    # def valor_restante(self):
-    #     valor_total = self.lote.valor_unitario
-    #     valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
-    #     return valor_total - valor_parcelas
     
     def get_valor_restante(self):
         valor_total = self.lote.valor_unitario
@@ -81,15 +75,16 @@ class Congressista(models.Model):
         else:
             return 'Pendente'
 
-    def calcular_proxima_parcela(self):
+    def atualizar_proxima_parcela(self):
+        print(self.pagamento_set.exists())
         if self.pagamento_set.exists():
             data_ultima_parcela = self.pagamento_set.latest('data_pagamento').data_pagamento
             proxima_parcela = data_ultima_parcela + timezone.timedelta(days=30)
         else:
-            # Se ainda não houver pagamentos, a próxima parcela será 30 dias a partir da data atual
             proxima_parcela = timezone.now() + timezone.timedelta(days=30)
-        return proxima_parcela   
 
+        self.proxima_parcela = proxima_parcela
+        self.save()
 
     @property
     def numero_parcelas(self):

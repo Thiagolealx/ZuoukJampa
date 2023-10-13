@@ -258,6 +258,10 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 
     gerar_relatorio_excel.short_description = "Gerar Relatório Excel"
+
+    def atualizar_proxima_parcela(sender, instance, **kwargs):
+        congressista = instance.congressista
+        congressista.atualizar_proxima_parcela()
     class Media:
         js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
 
@@ -282,6 +286,9 @@ class PagamentoAdmin(admin.ModelAdmin):
         return obj.congressista.lote.valor_unitario
 
     get_valor_lote.short_description = 'Valor do Lote'
+
+
+
 
 admin.site.register(Pagamento, PagamentoAdmin)
 
