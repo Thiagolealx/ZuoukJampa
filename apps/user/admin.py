@@ -44,7 +44,7 @@ admin.site.register(Categoria, CategoriaAdmin)
 class LancamentoParcelaForm(forms.ModelForm, BaseModelForm):
     class Meta:
         model = Pagamento
-        fields = ['congressista', 'valor_parcela','tipo',"numero_da_parcela"]
+        fields = ['congressista', 'valor_parcela','tipo',"categoria"]
 
 class PagamentoInline(admin.TabularInline):
     model = Pagamento
@@ -74,15 +74,16 @@ class CongressistaAdmin(admin.ModelAdmin):
         "ano",
         "uf",
         "lote",
+        "cidade",
         "get_valor_restante",
         "exibir_status_pagamento",
-        "proxima_parcela",
-        "numero_parcelas",
+        "proxima_parcela",        
     ]
     list_filter = [
         "nome_completo",
         "cpf",        
         "uf",
+        "cidade",
         "categoria",          
      #"status_pagamento",
         ]
@@ -167,18 +168,20 @@ class CongressistaAdmin(admin.ModelAdmin):
     get_total_parcelas.admin_order_field = 'valor_total_parcelas'
     get_total_parcelas.short_description = 'Total Parcelas'
 
+
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
+        categoria_id = 8
         try:
             qs = response.context_data["cl"].queryset
         except (AttributeError, KeyError):
             return response
 
-        total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+        total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0        
         get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
             'total_parcelas']
 
-        response.context_data["total_lote"] = total_lote
+        response.context_data["total_lote"] = total_lote      
         response.context_data["get_total_parcelas"] = get_total_parcelas
 
         return response
@@ -277,6 +280,7 @@ class PagamentoAdmin(admin.ModelAdmin):
         "congressista",
         "data_pagamento",
         "valor_parcela",
+        "categoria",
         "numero_da_parcela",
         "get_valor_lote",
     ]
@@ -407,6 +411,7 @@ class CaixaAdmin(admin.ModelAdmin):
 
 
     def changelist_view(self, request, extra_context=None):
+            categoria_ids =  [8,9]  
             response = super().changelist_view(request, extra_context=extra_context)
             try:
                 qs = response.context_data["cl"].queryset
@@ -414,6 +419,8 @@ class CaixaAdmin(admin.ModelAdmin):
                 return response
 
             total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+            valor_total_categoria_8 = Pagamento.objects.filter(congressista__categoria__in=categoria_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
+
             get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
                 'total_parcelas']
             get_total_entradas= (
@@ -429,6 +436,7 @@ class CaixaAdmin(admin.ModelAdmin):
         
 
             response.context_data["total_lote"] = total_lote
+            response.context_data["valor_total_categoria_8"] = valor_total_categoria_8
             response.context_data["get_total_parcelas"] = get_total_parcelas
             response.context_data["get_total_entradas"] = get_total_entradas
             response.context_data["get_total_saida"] = get_total_saida    

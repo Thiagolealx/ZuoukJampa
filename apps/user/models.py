@@ -61,8 +61,19 @@ class Congressista(models.Model):
 
     numero_parcelass = models.IntegerField(blank=True, null=True)
     total_parcelas = models.FloatField(default=0.0)
+
+    class Meta:
+        verbose_name = "Cadastro"
+        verbose_name_plural = "Cadastro"
+
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
+    
+    def valor_total_categoria_8(self):
+        categoria_id =[8,9]
+        valor_total = self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0        
+        return valor_total
+    
     
     def get_valor_restante(self):
         valor_total = self.lote.valor_unitario
@@ -85,7 +96,7 @@ class Congressista(models.Model):
 
         self.proxima_parcela = proxima_parcela
         self.save()
-
+   
     @property
     def numero_parcelas(self):
         return self.pagamento_set.count()
@@ -107,9 +118,10 @@ class Pagamento(models.Model):
     )
     congressista = models.ForeignKey(Congressista, on_delete=models.CASCADE)
     valor_parcela = models.DecimalField(max_digits=10, decimal_places=2)
-    numero_da_parcela = models.IntegerField(blank=False,null=False)
+    numero_da_parcela = models.IntegerField(blank=True,null=True)
     tipo =models.CharField("Tipo de Pagamento", max_length=20, choices=TIPO)
     data_pagamento = models.DateField(auto_now_add=True)
+    categoria= models.ForeignKey(Categoria,on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Pagamento"
@@ -192,6 +204,10 @@ class Caixa (models.Model):
     @property
     def congressitas(self):
         return Pagamento.objects.aggregate(total=Sum('valor_parcela'))['total'] or 0
+    @property
+    def day_user(self):
+        categoria_id = [8,9]  
+        return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 
     
     @property
     def entradas(self):
