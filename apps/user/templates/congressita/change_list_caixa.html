@@ -54,7 +54,7 @@
 
     {% block search %}
         {% search_form cl %}
-    {% endblock %}
+    {% endblock %}    
 
     <div class="col-12">
         <div>
@@ -91,47 +91,90 @@
                                     <div class="col-md-12">
                                         <table class="table shadow-sm bg-white rounded table-bordered" id="total-table">
                                             <tbody>
-                                                <td class="total-cell text-right" width="200px">
-                                                    <strong>Valor Total dos Day User  :</strong>
-                                                </td>
-                                                <td class="total-cell text-right" width="600px">
-                                                    <strong>R$ {{ valor_total_categoria_8 }}</strong>
-                                                </td>
-                                                <td class="total-cell text-right" width="200px">
-                                                    <strong>Valor Total dos Congressitas  :</strong>
-                                                </td>
-                                                <td class="total-cell text-right" width="600px">
-                                                    <strong>R$ {{ get_total_parcelas }}</strong>
-                                                </td>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
-                                                        <strong class="text-center align-middle">Valor Total de Entradas:</strong>
+                                                        <strong>Valor Total dos Day User:</strong>
                                                     </td>
-                                                    <td class="total-cell text-right" width="400px">
-                                                        <strong class="align-middle">R$ {{ get_total_entradas }}</strong>
+                                                    <td class="total-cell text-right" width="600px">
+                                                        <strong>R$ {{ valor_total_categoria_8 }}</strong>
                                                     </td>
                                                 </tr>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
-                                                        <strong class="text-center align-middle">Valor Total de Saidas:</strong>
+                                                        <strong>Valor Total dos Bailes:</strong>
                                                     </td>
-                                                    <td class="total-cell text-right" width="400px">
-                                                        <strong class="align-middle">R$ {{ get_total_saida }}</strong>
+                                                    <td class="total-cell text-right" width="600px">
+                                                        <strong>R$ {{ valor_total_baile }}</strong>
                                                     </td>
                                                 </tr>
                                                 <tr class="total-row">
-                                                    <td class="total-cell text-right"  width="200px">
-                                                        <strong class="text-center align-middle">Saldo Atualizado :</strong>
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Valor Total de Entradas:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="400px">
-                                                        <strong class="align-middle">R$ {{ saldo }}</strong>
+                                                        <strong>R$ {{ get_total_entradas }}</strong>
                                                     </td>
                                                 </tr>
-                                               
+                                                <tr class="total-row">
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Valor Total de Congressita:</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="600px">
+                                                        <strong>R$ {{ valor_total_congresso }}</strong>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                                <tr class="total-row">
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Valor Total dos Pagamentos:</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="600px">
+                                                        <strong>R$ {{ get_total_parcelas }}</strong>
+                                                    </td>
+                                                </tr>                                                
+                                                <tr class="total-row">
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Valor Total de Saídas:</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="400px">
+                                                        <strong class="text-danger">R$ {{ get_total_saida }}</strong>
+                                                    </td>
+                                                </tr>
+                                                <tr class="total-row">
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Saldo Atualizado:</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="400px">
+                                                        <strong id="saldoAmount">R$ {{ saldo }}</strong>
+                                                    </td>
+                                                </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
+                                <script>
+                                    // Obtém o elemento de saldo
+                                    var saldoElement = document.getElementById("saldoAmount");
+                                
+                                    // Obtém o valor do saldo (removendo o símbolo R$)
+                                    var saldoValue = parseFloat(saldoElement.innerText.replace("R$ ", ""));
+                                
+                                    // Formata o valor do saldo com até duas casas decimais e uma vírgula
+                                    var formattedSaldo = saldoValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                
+                                    // Define a cor com base no valor do saldo
+                                    if (saldoValue > 0) {
+                                        saldoElement.style.color = "darkgreen";  // Verde mais escuro
+                                    } else {
+                                        saldoElement.style.color = "red";  // Vermelho
+                                    }
+                                
+                                    // Atualiza o texto do saldo formatado
+                                    saldoElement.innerText = "R$ " + formattedSaldo;
+                                </script>
                                 
 {% endblock %}
                                 {% if action_form and actions_on_bottom and cl.show_admin_actions %}

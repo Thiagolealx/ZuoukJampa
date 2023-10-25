@@ -74,7 +74,16 @@ class Congressista(models.Model):
         valor_total = self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0        
         return valor_total
     
+    def valor_total_baile(self):
+        categoria_id =[2,3]
+        valor_total = self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0        
+        return valor_total
     
+    def valor_total_congresso(self):
+        categoria_id =[1,]
+        valor_total = self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0        
+        return valor_total
+
     def get_valor_restante(self):
         valor_total = self.lote.valor_unitario
         valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
@@ -207,6 +216,14 @@ class Caixa (models.Model):
     @property
     def day_user(self):
         categoria_id = [8,9]  
+        return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 @property
+    @property
+    def baile(self):
+        categoria_id = [2,3]  
+        return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 
+    @property
+    def congressista(self):
+        categoria_id = [1,]  
         return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 
     
     @property

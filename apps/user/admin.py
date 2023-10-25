@@ -284,6 +284,11 @@ class PagamentoAdmin(admin.ModelAdmin):
         "numero_da_parcela",
         "get_valor_lote",
     ]
+    list_filter = [
+        "congressista",
+        "data_pagamento",        
+        "categoria",
+    ]
     ordering = ["congressista"]
 
     def get_valor_lote(self, obj):
@@ -411,7 +416,7 @@ class CaixaAdmin(admin.ModelAdmin):
 
 
     def changelist_view(self, request, extra_context=None):
-            categoria_ids =  [8,9]  
+            
             response = super().changelist_view(request, extra_context=extra_context)
             try:
                 qs = response.context_data["cl"].queryset
@@ -419,7 +424,12 @@ class CaixaAdmin(admin.ModelAdmin):
                 return response
 
             total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+            categoria_ids =  [8,9]  
             valor_total_categoria_8 = Pagamento.objects.filter(congressista__categoria__in=categoria_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
+            bailes_ids =  [2,3]
+            valor_total_baile = Pagamento.objects.filter(congressista__categoria__in=bailes_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
+            congresso_id =  [1,]
+            valor_total_congresso = Pagamento.objects.filter(congressista__categoria__in=congresso_id).aggregate(total=Sum('valor_parcela'))['total'] or 0
 
             get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
                 'total_parcelas']
@@ -437,6 +447,8 @@ class CaixaAdmin(admin.ModelAdmin):
 
             response.context_data["total_lote"] = total_lote
             response.context_data["valor_total_categoria_8"] = valor_total_categoria_8
+            response.context_data["valor_total_baile"] = valor_total_baile
+            response.context_data["valor_total_congresso"] = valor_total_congresso
             response.context_data["get_total_parcelas"] = get_total_parcelas
             response.context_data["get_total_entradas"] = get_total_entradas
             response.context_data["get_total_saida"] = get_total_saida    
