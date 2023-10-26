@@ -1,6 +1,7 @@
 from datetime import timezone
 
 from django.core.exceptions import ValidationError
+from validate_docbr import CPF
 from django.core.validators import MinLengthValidator
 from django.db.models import Sum
 from django.shortcuts import render
@@ -65,7 +66,20 @@ class Congressista(models.Model):
     class Meta:
         verbose_name = "Cadastro"
         verbose_name_plural = "Cadastro"
+    
+#Validação do Cpf:
+    def clean(self):
+        super().clean()
+        if self.cpf:
+            cpf = self.cpf.replace(".", "").replace("-", "").strip()
+            if not CPF().validate(cpf):
+                raise ValidationError('CPF inválido.')
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super(Congressista, self).save(*args, **kwargs)
+    
+# Calculo pra somar as parcelas:
     def valor_total_parcelas(self):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
     
