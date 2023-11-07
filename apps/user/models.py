@@ -43,7 +43,7 @@ class Congressista(models.Model):
     nome_completo = models.CharField(max_length=50, blank=False,null=False)
     cpf = models.CharField(max_length=11,blank=False,null=False)
     contato = models.FloatField(max_length=15,blank=True,null=True)
-    categoria = models.ForeignKey(Categoria,on_delete=models.DO_NOTHING,null=True)
+    categoria = models.ForeignKey(Categoria,on_delete=models.CASCADE, null=True,default=1)
     lote = models.ForeignKey(Lote,on_delete=models.DO_NOTHING,null=False)
     ano = models.CharField(max_length=4,blank=False,null=False)
     cep = models.CharField("CEP", max_length=9, blank=True, null=True,

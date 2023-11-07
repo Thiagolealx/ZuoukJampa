@@ -85,7 +85,7 @@ class CongressistaAdmin(admin.ModelAdmin):
         "uf",
         "cidade",
         "categoria",          
-     #"status_pagamento",
+        "lote",
         ]
     list_select_related = ['lote']
     
