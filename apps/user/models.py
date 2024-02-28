@@ -42,25 +42,24 @@ class Congressista(models.Model):
 
     nome_completo = models.CharField(max_length=50, blank=False,null=False)
     cpf = models.CharField(max_length=11,blank=False,null=False)
-    contato = models.FloatField(max_length=15,blank=True,null=True)
     categoria = models.ForeignKey(Categoria,on_delete=models.CASCADE, null=True,default=1)
     lote = models.ForeignKey(Lote,on_delete=models.DO_NOTHING,null=False)
     ano = models.CharField(max_length=4,blank=False,null=False)
     cep = models.CharField("CEP", max_length=9, blank=True, null=True,
                            help_text="Digite um CEP válido para atualizar os campos abaixo.")
-    logradouro = models.CharField(
-        "Logradouro", max_length=200, blank=True, null=True)
-    num_endereco = models.CharField(
-        "Número", max_length=10, blank=True, null=True)
-    complemento = models.CharField(max_length=30, blank=True, null=True)
-    bairro = models.CharField(max_length=50, blank=True, null=True)
+    # logradouro = models.CharField(
+    #     "Logradouro", max_length=200, blank=True, null=True)
+    # num_endereco = models.CharField(
+    #     "Número", max_length=10, blank=True, null=True)
+    # complemento = models.CharField(max_length=30, blank=True, null=True)
+    # bairro = models.CharField(max_length=50, blank=True, null=True)
     cidade = models.CharField(
         "Município", max_length=100, blank=True, null=True)
     uf = models.CharField("UF", max_length=2, blank=True,
                           null=True, validators=[validate_uf])
     proxima_parcela = models.DateField(blank=True, null=True)
 
-    numero_parcelass = models.IntegerField(blank=True, null=True)
+    # numero_parcelass = models.IntegerField(blank=True, null=True)
     total_parcelas = models.FloatField(default=0.0)
 
     class Meta:
@@ -164,7 +163,7 @@ class Entrada(models.Model):
     - quantidade: IntegerField to store the quantity of the entry.
     - ano: IntegerField to store the year of the entry.
     - nome_empresa: CharField to store the name of the company associated with the entry.
-    - comprovante: ImageField to store the receipt image of the entry.
+    - https://soundcloud.com/i2acoficial/essa-noite-prod-dj-kakah?si=caff1fc402004d739bb0ea09a7be3174&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharingcomprovante: ImageField to store the receipt image of the entry.
     - valor_total_entrada: FloatField to store the calculated total value of the entry. This field is editable=False, meaning it cannot be directly modified by users.
     """
 
@@ -190,7 +189,7 @@ class Entrada(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Overrides the default save method to calculate the total value of the entry before saving it to the database.
+        Overrides the default save mehttps://soundcloud.com/i2acoficial/essa-noite-prod-dj-kakah?si=caff1fc402004d739bb0ea09a7be3174&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharingthod to calculate the total value of the entry before saving it to the database.
         """
         self.valor_total_entrada = self.calcular_valor_total()
         super().save(*args, **kwargs)
