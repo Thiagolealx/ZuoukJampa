@@ -293,6 +293,10 @@ class PagamentoAdmin(admin.ModelAdmin):
 
     def get_valor_lote(self, obj):
         return obj.congressista.lote.valor_unitario
+    
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)  # Chamar o método original para salvar o pagamento
+        obj.congressista.atualizar_proxima_parcela()
 
     get_valor_lote.short_description = 'Valor do Lote'
 

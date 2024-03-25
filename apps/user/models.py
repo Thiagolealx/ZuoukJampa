@@ -6,6 +6,8 @@ from django.core.validators import MinLengthValidator
 from django.db.models import Sum
 from django.shortcuts import render
 from decimal import Decimal
+from django.utils import timezone
+
 
 
 from django.db import models
@@ -109,7 +111,6 @@ class Congressista(models.Model):
             return 'Pendente'
 
     def atualizar_proxima_parcela(self):
-        print(self.pagamento_set.exists())
         if self.pagamento_set.exists():
             data_ultima_parcela = self.pagamento_set.latest('data_pagamento').data_pagamento
             proxima_parcela = data_ultima_parcela + timezone.timedelta(days=30)
