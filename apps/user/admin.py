@@ -293,10 +293,6 @@ class PagamentoAdmin(admin.ModelAdmin):
 
     def get_valor_lote(self, obj):
         return obj.congressista.lote.valor_unitario
-    
-    def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)  # Chamar o método original para salvar o pagamento
-        obj.congressista.atualizar_proxima_parcela()
 
     get_valor_lote.short_description = 'Valor do Lote'
 
@@ -323,9 +319,9 @@ class StatusPagamentoFilter(admin.SimpleListFilter):
 
 
 class EntradaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "quantidade", "ano", "nome_empresa","valor_total_entrada"]
+    list_display = ["descricao", "ano","quantidade","valor_total_entrada"]
     list_filter = ["ano"]
-    search_fields = ["descricao", "nome_empresa"]
+    search_fields = ["descricao"]
     ordering = ["descricao"]
     change_list_template = "congressita/change_list_entradas.html"
 
@@ -364,9 +360,9 @@ class EntradaAdmin(admin.ModelAdmin):
 
 
 class SaidaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "quantidade", "ano", "nome_empresa","valor_total_saida" ]
+    list_display = ["descricao", "quantidade", "ano", "valor_total_saida" ]
     list_filter = ["ano"]
-    search_fields = ["descricao", "nome_empresa"]
+    search_fields = ["descricao", ]
     ordering = ["descricao"]
     change_list_template = "congressita/change_list_saidas.html"
 

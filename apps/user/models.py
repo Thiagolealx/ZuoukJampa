@@ -1,4 +1,4 @@
-from datetime import timezone
+from datetime import date, timezone
 
 from django.core.exceptions import ValidationError
 from validate_docbr import CPF
@@ -150,48 +150,32 @@ class Pagamento(models.Model):
         verbose_name = "Pagamento"
         verbose_name_plural = "Pagamentos"
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.congressista.atualizar_proxima_parcela()
+
 
     def __str__(self) -> str:
         return f"{self.congressista.nome_completo} - {self.data_pagamento}"
 
 class Entrada(models.Model):
-    """
-    Represents an entry in a financial system.
-
-    Fields:
-    - descricao: CharField to store the description of the entry.
-    - valor_unitario: DecimalField to store the unit price of the entry.
-    - quantidade: IntegerField to store the quantity of the entry.
-    - ano: IntegerField to store the year of the entry.
-    - nome_empresa: CharField to store the name of the company associated with the entry.
-    - https://soundcloud.com/i2acoficial/essa-noite-prod-dj-kakah?si=caff1fc402004d739bb0ea09a7be3174&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharingcomprovante: ImageField to store the receipt image of the entry.
-    - valor_total_entrada: FloatField to store the calculated total value of the entry. This field is editable=False, meaning it cannot be directly modified by users.
-    """
-
+    
     descricao = models.CharField(max_length=100, blank=True, null=True)
     valor_unitario = models.DecimalField(verbose_name="Valor", max_digits=10, decimal_places=2)
-    quantidade = models.IntegerField(blank=False, null=False)
-    ano = models.IntegerField(blank=False, null=False)
-    nome_empresa = models.CharField(max_length=100)
+    quantidade = models.IntegerField(default=1, blank=False, null=False)
+    ano = models.IntegerField(default=date.today().year)    
+    # nome_empresa = models.CharField(max_length=100)
     comprovante = models.ImageField(upload_to='comprovantes/', blank=True, null=False)
     valor_total_entrada = models.FloatField(blank=True, null=False, editable=False)
 
     def calcular_valor_total(self):
-        """
-        Calculates the total value of the entry.
-
-        Returns:
-        - The total value of the entry (unit price * quantity) if both unit price and quantity are not None.
-        - 0 otherwise.
-        """
+        
         if self.valor_unitario is not None and self.quantidade is not None:
             return self.valor_unitario * self.quantidade
         return 0
 
-    def save(self, *args, **kwargs):
-        """
-        Overrides the default save mehttps://soundcloud.com/i2acoficial/essa-noite-prod-dj-kakah?si=caff1fc402004d739bb0ea09a7be3174&utm_source=clipboard&utm_medium=text&utm_campaign=social_sharingthod to calculate the total value of the entry before saving it to the database.
-        """
+    def save(self, *args, **kwargs):        
+        
         self.valor_total_entrada = self.calcular_valor_total()
         super().save(*args, **kwargs)
 
@@ -204,9 +188,9 @@ class Entrada(models.Model):
 class Saida(models.Model):
     descricao = models.CharField(max_length=100,blank=True, null=False)
     valor_unitario = models.DecimalField(verbose_name="Valor",max_digits=10, decimal_places=2)
-    quantidade = models.IntegerField(blank=False, null=False)
-    ano = models.IntegerField( blank=False, null=False)
-    nome_empresa = models.CharField(max_length=100,blank=True, null=True)
+    quantidade = models.IntegerField(default=1, blank=False, null=False)
+    ano = models.IntegerField(default=date.today().year)  
+    # nome_empresa = models.CharField(max_length=100,blank=True, null=True)
     comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
     valor_total_saida = models.FloatField(blank=True, null=False, editable=False)
 
