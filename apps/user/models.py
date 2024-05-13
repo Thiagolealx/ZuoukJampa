@@ -60,6 +60,7 @@ class Congressista(models.Model):
     uf = models.CharField("UF", max_length=2, blank=True,
                           null=True, validators=[validate_uf])
     proxima_parcela = models.DateField(blank=True, null=True)
+    desconto = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
 
     # numero_parcelass = models.IntegerField(blank=True, null=True)
     total_parcelas = models.FloatField(default=0.0)
@@ -85,7 +86,7 @@ class Congressista(models.Model):
         return self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
     
     def valor_total_categoria_8(self):
-        categoria_id =[8,9]
+        categoria_id =[7,8,9]
         valor_total = self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0        
         return valor_total
     
@@ -100,7 +101,7 @@ class Congressista(models.Model):
         return valor_total
 
     def get_valor_restante(self):
-        valor_total = self.lote.valor_unitario
+        valor_total = self.lote.valor_unitario - self.desconto
         valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
         return valor_total - valor_parcelas
 

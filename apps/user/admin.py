@@ -424,7 +424,7 @@ class CaixaAdmin(admin.ModelAdmin):
                 return response
 
             total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
-            categoria_ids =  [8,9]  
+            categoria_ids =  [7,8,9]  
             valor_total_categoria_8 = Pagamento.objects.filter(congressista__categoria__in=categoria_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
             bailes_ids =  [2,3]
             valor_total_baile = Pagamento.objects.filter(congressista__categoria__in=bailes_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
