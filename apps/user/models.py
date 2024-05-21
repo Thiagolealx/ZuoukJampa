@@ -42,19 +42,18 @@ class Categoria(models.Model):
 
 class Congressista(models.Model):
 
+    PASSEIO_OPCOES = (
+        ('S', 'Sim'),
+        ('N', 'Não'), )
+
     nome_completo = models.CharField(max_length=50, blank=False,null=False)
     cpf = models.CharField(max_length=11,blank=False,null=False)
     categoria = models.ForeignKey(Categoria,on_delete=models.CASCADE, null=True,default=1)
     lote = models.ForeignKey(Lote,on_delete=models.DO_NOTHING,null=False)
+    passeio_de_barco = models.CharField(max_length=1, choices=PASSEIO_OPCOES, default='N')
     ano = models.CharField(max_length=4,blank=False,null=False)
     cep = models.CharField("CEP", max_length=9, blank=True, null=True,
-                           help_text="Digite um CEP válido para atualizar os campos abaixo.")
-    # logradouro = models.CharField(
-    #     "Logradouro", max_length=200, blank=True, null=True)
-    # num_endereco = models.CharField(
-    #     "Número", max_length=10, blank=True, null=True)
-    # complemento = models.CharField(max_length=30, blank=True, null=True)
-    # bairro = models.CharField(max_length=50, blank=True, null=True)
+                           help_text="Digite um CEP válido para atualizar os campos abaixo.")  
     cidade = models.CharField(
         "Município", max_length=100, blank=True, null=True)
     uf = models.CharField("UF", max_length=2, blank=True,
@@ -225,6 +224,10 @@ class Caixa (models.Model):
         categoria_id = [1,]  
         return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 
     
+    @property
+    def passeio(self):
+        return Entrada.objects.filter(id__in=[4, 5, 6]).aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+        
     @property
     def entradas(self):
         return Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']

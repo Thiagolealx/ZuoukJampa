@@ -109,11 +109,15 @@
                                                 </tr>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
-                                                        <strong>Valor Total de Entradas:</strong>
+                                                        <strong>Valor Total de Passeios:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="400px">
-                                                        <strong>R$ {{ get_total_entradas }}</strong>
+                                                        <strong>R$ {{ passeio_de_barco }}</strong>
                                                     </td>
+                                                </tr>
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
                                                 </tr>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
@@ -124,15 +128,12 @@
                                                     </td>
                                                 </tr>
                                                 <tr>
-                                                    <td></td>
-                                                    <td></td>
-                                                </tr>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
-                                                        <strong>Valor Total dos Pagamentos:</strong>
+                                                        <strong>Valor Total de Entradas:</strong>
                                                     </td>
-                                                    <td class="total-cell text-right" width="600px">
-                                                        <strong>R$ {{ get_total_parcelas }}</strong>
+                                                    <td class="total-cell text-right" width="400px">
+                                                        <strong>R$ {{ get_total_entradas }}</strong>
                                                     </td>
                                                 </tr>                                                
                                                 <tr class="total-row">
@@ -143,9 +144,21 @@
                                                         <strong class="text-danger">R$ {{ get_total_saida }}</strong>
                                                     </td>
                                                 </tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
                                                 <tr class="total-row">
                                                     <td class="total-cell text-right" width="200px">
-                                                        <strong>Saldo Atualizado:</strong>
+                                                        <strong>Valor Total dos Pagamentos:</strong>
+                                                    </td>
+                                                    <td class="total-cell text-right" width="600px">
+                                                        <strong>R$ {{ get_total_parcelas }}</strong>
+                                                    </td>
+                                                </tr>                                              
+                                                
+                                                <tr class="total-row">
+                                                    <td class="total-cell text-right" width="200px">
+                                                        <strong>Saldo Em Caixa Atualizado:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="400px">
                                                         <strong id="saldoAmount">R$ {{ saldo }}</strong>

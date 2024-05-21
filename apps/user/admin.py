@@ -70,14 +70,14 @@ class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
     list_display = [
         "nome_completo",
-        "categoria",
-        "ano",
+        "categoria",        
         "uf",
         "lote",
         "cidade",
         "get_valor_restante",
         "exibir_status_pagamento",
-        "proxima_parcela",        
+        "proxima_parcela",   
+        "passeio_de_barco",     
     ]
     list_filter = [
         "nome_completo",
@@ -86,6 +86,7 @@ class CongressistaAdmin(admin.ModelAdmin):
         "cidade",
         "categoria",          
         "lote",
+        "passeio_de_barco"
         ]
     list_select_related = ['lote']
     
@@ -187,7 +188,7 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 # Criação do relatorio
 
-    actions = ['gerar_relatorio_word', 'gerar_relatorio_excel']
+    actions = ['gerar_relatorio_word', 'gerar_relatorio_excel','gerar_relatorio_passeio_barco']
     def gerar_relatorio_word(self, request, queryset):
         # Obtém a UF selecionada do request GET
         uf_filter = request.GET.get('uf')
@@ -262,11 +263,62 @@ class CongressistaAdmin(admin.ModelAdmin):
 
     gerar_relatorio_excel.short_description = "Gerar Relatório Excel"
 
-    def atualizar_proxima_parcela(sender, instance, **kwargs):
-        congressista = instance.congressista
-        congressista.atualizar_proxima_parcela()
-    class Media:
-        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
+    def gerar_relatorio_passeio_barco(self, request, queryset):
+        # Crie um documento Word
+        doc = docx.Document()
+
+        # Adicione um título
+        doc.add_heading('Relatório de Congressistas - Passeio de Barco', level=1)
+
+        # Filtra os congressistas que têm passeio_de_barco definido como 'Sim'
+        congressistas = queryset.filter(passeio_de_barco='S')
+
+        # Ordene os congressistas por nome completo
+        congressistas = congressistas.order_by('nome_completo')
+
+        # Inicialize um contador
+        contador = 1
+
+        # Adicione um título para a lista de congressistas
+        doc.add_heading('Congressistas', level=2)
+
+        # Adicione os detalhes dos congressistas selecionados
+        for congressista in congressistas:
+            if congressista.categoria.id == 1:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Reinicialize o contador para a segunda lista
+        contador = 1
+
+        # Adicione um título para a lista de outras categorias
+        doc.add_heading('Outras Categorias', level=2)
+
+        # Adicione os detalhes das outras categorias
+        for congressista in congressistas:
+            if congressista.categoria.id != 1:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Adicione o total de pessoas
+        total_pessoas = len(congressistas)
+        paragrafo = doc.add_paragraph()
+        run = paragrafo.add_run(f'Total de pessoas: {total_pessoas}')
+        run.bold = True
+        run.font.size = docx.shared.Pt(14)
+
+        # Crie uma resposta HTTP com o conteúdo do documento Word
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_passeio_barco.docx"'
+        doc.save(response)
+
+        return response
+
+    gerar_relatorio_passeio_barco.short_description = "Gerar Relatório Passeio de Barco"
 
 
 
@@ -437,13 +489,11 @@ class CaixaAdmin(admin.ModelAdmin):
                 Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
             )
             get_total_saida = (
-            Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
-        )
+                Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+            )
+            passeio_de_barco = Entrada.objects.filter(id__in=[4, 5, 6]).aggregate(total=Sum("valor_total_entrada"))['total'] or 0
 
             saldo = Decimal(get_total_parcelas or 0) + Decimal(get_total_entradas or 0) - Decimal(get_total_saida or 0)
-
-            
-        
 
             response.context_data["total_lote"] = total_lote
             response.context_data["valor_total_categoria_8"] = valor_total_categoria_8
@@ -451,7 +501,8 @@ class CaixaAdmin(admin.ModelAdmin):
             response.context_data["valor_total_congresso"] = valor_total_congresso
             response.context_data["get_total_parcelas"] = get_total_parcelas
             response.context_data["get_total_entradas"] = get_total_entradas
-            response.context_data["get_total_saida"] = get_total_saida    
+            response.context_data["get_total_saida"] = get_total_saida  
+            response.context_data["passeio_de_barco"] = passeio_de_barco  
             response.context_data["saldo"] = saldo  
     
 
