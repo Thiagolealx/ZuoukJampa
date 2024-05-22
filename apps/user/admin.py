@@ -188,43 +188,50 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 # Criação do relatorio
 
-    actions = ['gerar_relatorio_word', 'gerar_relatorio_excel','gerar_relatorio_passeio_barco']
-    def gerar_relatorio_word(self, request, queryset):
-        # Obtém a UF selecionada do request GET
-        uf_filter = request.GET.get('uf')
-
+    actions = ['gerar_relatorio', 'gerar_relatorio_excel','gerar_relatorio_passeio_barco']
+    def gerar_relatorio(self, request, queryset):
         # Crie um documento Word
         doc = docx.Document()
 
         # Adicione um título
         doc.add_heading('Relatório de Congressistas', level=1)
 
-        # Filtra os congressistas com base na UF selecionada
-        congressistas = queryset.filter(uf=uf_filter) if uf_filter else queryset
+        # Obtenha todas as categorias únicas
+        categorias = Categoria.objects.all()
 
-        # Ordene os congressistas por nome completo
-        congressistas = congressistas.order_by('nome_completo')
+        # Itere sobre cada categoria
+        for categoria in categorias:
+            # Filtra os congressistas dessa categoria
+            congressistas = queryset.filter(categoria=categoria)
 
-        # Inicialize um contador
-        contador = 1
+            # Adicione um título para a categoria
+            doc.add_heading(f'{categoria.tipo}', level=2)
 
-        # Adicione os detalhes dos congressistas selecionados
-        for congressista in congressistas:
-            paragrafo = doc.add_paragraph()
-            paragrafo.add_run(f'  {contador}')
-            paragrafo.add_run(f' {congressista.nome_completo}')
-            # paragrafo.add_run(f'\nUF: {congressista.uf}')
-            contador += 1
-            # paragrafo.add_run('\n' + '=' * 40)  # Linha separadora entre os registros
+            # Inicialize um contador
+            contador = 1
+
+            # Adicione os detalhes dos congressistas dessa categoria
+            for congressista in congressistas:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Adicione o total de pessoas
+        total_pessoas = queryset.count()
+        paragrafo = doc.add_paragraph()
+        run = paragrafo.add_run(f'Total de pessoas: {total_pessoas}')
+        run.bold = True
+        run.font.size = docx.shared.Pt(14)
 
         # Crie uma resposta HTTP com o conteúdo do documento Word
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-        response['Content-Disposition'] = 'attachment; filename="relatorio_congressistas.docx"'
+        response['Content-Disposition'] = 'attachment; filename="relatorio.docx"'
         doc.save(response)
 
         return response
 
-    gerar_relatorio_word.short_description = "Gerar Relatório Word"
+    gerar_relatorio.short_description = "Gerar Relatório"
 
     def gerar_relatorio_excel(self, request, queryset):
         # Obtém a UF selecionada do request GET

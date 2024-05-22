@@ -30,7 +30,7 @@ class Lote(models.Model):
 
 
 class Categoria(models.Model):
-    tipo = models.CharField(max_length=20,blank=False, null=False, validators=[MinLengthValidator(5)])
+    tipo = models.CharField(max_length=20,blank=False, null=False, validators=[MinLengthValidator(3)])
     sigla = models.CharField(max_length=2,blank=False, null=False)
 
     class Meta:
