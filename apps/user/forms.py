@@ -5,7 +5,7 @@ from django.forms import TextInput
 from .models import Congressista
 class CongressistaFormAdmin(forms.ModelForm):
     model = Congressista
-    fields = ("__all__")
+    fields = ("nome_completo", "cpf", "categoria", "lote", "ano", "cep",  "bairro", "cidade", "uf", "proxima_parcela")
     widgets = {
         "logradouro": TextInput(attrs={"readonly": "readonly", "style": "width: 270px; background: #f0f0f0;"}),
         "bairro": TextInput(attrs={"readonly": "readonly", "style": "width: 270px; background: #f0f0f0;"}),

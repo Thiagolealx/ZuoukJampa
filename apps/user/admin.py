@@ -1,16 +1,25 @@
+from os import path
+
 from django.contrib import admin
+from django.shortcuts import render
 from django.utils.html import format_html
 
 from .forms import CongressistaFormAdmin
-from .models import Lote, Categoria, Congressista,Pagamento
+from .models import Lote, Categoria, Congressista, Pagamento, Entrada, Saida, Caixa
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.db.models import Sum
 from django.forms.models import BaseModelForm
 from django import forms
 from django.forms.models import BaseInlineFormSet
+import docx
+import openpyxl
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+
 
 from decimal import Decimal
+
 class LoteAdmin(admin.ModelAdmin):
 
     list_display = [
@@ -35,7 +44,7 @@ admin.site.register(Categoria, CategoriaAdmin)
 class LancamentoParcelaForm(forms.ModelForm, BaseModelForm):
     class Meta:
         model = Pagamento
-        fields = ['congressista', 'valor_parcela','tipo',"numero_da_parcela"]
+        fields = ['congressista', 'valor_parcela','tipo',"categoria"]
 
 class PagamentoInline(admin.TabularInline):
     model = Pagamento
@@ -54,43 +63,85 @@ class PagamentoInlineFormSet(BaseInlineFormSet):
         obj = super().save_new(form, commit=False)
         obj.save()
         return obj
+    
+
 
 class CongressistaAdmin(admin.ModelAdmin):
     change_form_template = "congressita/change_form_congressista.html"
-    list_display = ["nome_completo", "categoria", "ano", "uf", "lote","valor_restante","exibir_status_pagamento",]
+    list_display = [
+        "nome_completo",
+        "categoria",        
+        "uf",
+        "lote",
+        "cidade",
+        "get_valor_restante",
+        "exibir_status_pagamento",
+        "proxima_parcela",   
+        "passeio_de_barco",     
+    ]
+    list_filter = [
+        "nome_completo",
+        "cpf",        
+        "uf",
+        "cidade",
+        "categoria",          
+        "lote",
+        "passeio_de_barco"
+        ]
     list_select_related = ['lote']
+    
     form = CongressistaFormAdmin
     change_list_template = "congressita/change_list_congressitas.html"
     inlines = [PagamentoInline]
-    readonly_fields = ['valor_total_parcelas', 'valor_restante']
+    readonly_fields = ['valor_total_parcelas', 'get_valor_restante']
     list_max_show_all = 20
 
+    # class StatusPagamentoFilter(admin.SimpleListFilter):
+    #     title = _('Status de Pagamento')
+    #     parameter_name = 'status_pagamento'
+
+    #     def lookups(self, request, model_admin):
+    #         return (
+    #             ('pago', _('Pago')),
+    #             ('pendente', _('Pendente')),
+    #         )
+
+    #     def queryset(self, request, queryset):
+    #         if self.value() == 'pago':
+    #             return queryset.filter(valor_restante=0)
+    #         elif self.value() == 'pendente':
+    #             return queryset.exclude(valor_restante=0)
+
+    def get_valor_restante(self, obj):
+        return obj.get_valor_restante()
+    get_valor_restante.short_description = 'Valor Restante'
+
     def exibir_status_pagamento(self, obj):
-        valor_restante = obj.valor_restante() if callable(obj.valor_restante) else obj.valor_restante
-        if abs(valor_restante) < 0.01:  # Ajuste a tolerância conforme necessário
+        valor_restante = obj.get_valor_restante()
+        if valor_restante <= 0:  # Ajuste a tolerância conforme necessário
             return format_html('<span style="color: green;">Pago</span>')
         else:
             return format_html('<span style="color: red;">Pendente</span>')
 
     exibir_status_pagamento.short_description = 'Status de Pagamento'
 
-    def get_list_filter(self, request):
-        return (StatusPagamentoFilter, 'ano', 'categoria','nome_completo',)
 
-    def get_valor_restante(self, obj):
-        return obj.valor_restante
-
-    get_valor_restante.admin_order_field = 'valor_restante'
-    get_valor_restante.short_description = 'Valor Restante'
+    # def get_list_filter(self, request):
+    #     return [
+    #         ('status_pagamento', admin.AllValuesFieldListFilter),
+    #         'ano',
+    #         'categoria',
+    #         'nome_completo',
+    #     ]    
 
     def status_pagamento(self, obj):
-        if obj.valor_restante == 0:
-            return _('Pago')
+        if obj.get_valor_restante() == 0:
+            return 'Pago'
         else:
-            return _('Pendente')
+            return 'Pendente'
 
     status_pagamento.admin_order_field = 'valor_restante'
-    status_pagamento.short_description = _('Status de Pagamento')
+    status_pagamento.short_description = 'Status de Pagamento'    
 
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
@@ -111,27 +162,170 @@ class CongressistaAdmin(admin.ModelAdmin):
         total_parcelas = Congressista.objects.aggregate(total=Sum('pagamento__valor_parcela'))['total']
         return total_parcelas or 0
 
+    def save(self, *args, **kwargs):
+        self.total_parcelas = self.get_total_parcelas()
+        super().save(*args, **kwargs)
+
     get_total_parcelas.admin_order_field = 'valor_total_parcelas'
     get_total_parcelas.short_description = 'Total Parcelas'
 
+
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
+        categoria_id = 8
         try:
             qs = response.context_data["cl"].queryset
         except (AttributeError, KeyError):
             return response
 
-        total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+        total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0        
         get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
             'total_parcelas']
 
-        response.context_data["total_lote"] = total_lote
+        response.context_data["total_lote"] = total_lote      
         response.context_data["get_total_parcelas"] = get_total_parcelas
 
         return response
+# Criação do relatorio
 
-    class Media:
-        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js","admin/js/desativar_fka_pessoa.js")
+    actions = ['gerar_relatorio', 'gerar_relatorio_excel','gerar_relatorio_passeio_barco']
+    def gerar_relatorio(self, request, queryset):
+        # Crie um documento Word
+        doc = docx.Document()
+
+        # Adicione um título
+        doc.add_heading('Relatório de Congressistas', level=1)
+
+        # Obtenha todas as categorias únicas
+        categorias = Categoria.objects.all()
+
+        # Itere sobre cada categoria
+        for categoria in categorias:
+            # Filtra os congressistas dessa categoria
+            congressistas = queryset.filter(categoria=categoria)
+
+            # Adicione um título para a categoria
+            doc.add_heading(f'{categoria.tipo}', level=2)
+
+            # Inicialize um contador
+            contador = 1
+
+            # Adicione os detalhes dos congressistas dessa categoria
+            for congressista in congressistas:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Adicione o total de pessoas
+        total_pessoas = queryset.count()
+        paragrafo = doc.add_paragraph()
+        run = paragrafo.add_run(f'Total de pessoas: {total_pessoas}')
+        run.bold = True
+        run.font.size = docx.shared.Pt(14)
+
+        # Crie uma resposta HTTP com o conteúdo do documento Word
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="relatorio.docx"'
+        doc.save(response)
+
+        return response
+
+    gerar_relatorio.short_description = "Gerar Relatório"
+
+    def gerar_relatorio_excel(self, request, queryset):
+        # Obtém a UF selecionada do request GET
+        uf_filter = request.GET.get('uf')
+
+        # Crie um novo workbook do Excel
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = 'Relatório de Congressistas'
+
+        # Crie os cabeçalhos das colunas
+        headers = ['Número', 'Nome Completo', 'UF']
+        for col_num, header in enumerate(headers, 1):
+            col_letter = get_column_letter(col_num)
+            ws[f"{col_letter}1"] = header
+
+        # Filtra os congressistas com base na UF selecionada
+        congressistas = queryset.filter(uf=uf_filter) if uf_filter else queryset
+
+        # Ordene os congressistas por nome completo
+        congressistas = congressistas.order_by('nome_completo')
+
+        # Preencha os dados dos congressistas
+        for row_num, congressista in enumerate(congressistas, 2):
+            ws[f"A{row_num}"] = row_num - 1  # Número
+            ws[f"B{row_num}"] = congressista.nome_completo  # Nome Completo
+            ws[f"C{row_num}"] = congressista.uf  # UF
+            ws[f"D{row_num}"] = congressista.lote.valor_unitario  # Valor
+
+        # Crie uma resposta HTTP com o conteúdo do arquivo Excel
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_congressistas.xlsx"'
+        wb.save(response)
+
+        return response
+
+    gerar_relatorio_excel.short_description = "Gerar Relatório Excel"
+
+    def gerar_relatorio_passeio_barco(self, request, queryset):
+        # Crie um documento Word
+        doc = docx.Document()
+
+        # Adicione um título
+        doc.add_heading('Relatório de Congressistas - Passeio de Barco', level=1)
+
+        # Filtra os congressistas que têm passeio_de_barco definido como 'Sim'
+        congressistas = queryset.filter(passeio_de_barco='S')
+
+        # Ordene os congressistas por nome completo
+        congressistas = congressistas.order_by('nome_completo')
+
+        # Inicialize um contador
+        contador = 1
+
+        # Adicione um título para a lista de congressistas
+        doc.add_heading('Congressistas', level=2)
+
+        # Adicione os detalhes dos congressistas selecionados
+        for congressista in congressistas:
+            if congressista.categoria.id == 1:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Reinicialize o contador para a segunda lista
+        contador = 1
+
+        # Adicione um título para a lista de outras categorias
+        doc.add_heading('Outras Categorias', level=2)
+
+        # Adicione os detalhes das outras categorias
+        for congressista in congressistas:
+            if congressista.categoria.id != 1:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+                contador += 1
+
+        # Adicione o total de pessoas
+        total_pessoas = len(congressistas)
+        paragrafo = doc.add_paragraph()
+        run = paragrafo.add_run(f'Total de pessoas: {total_pessoas}')
+        run.bold = True
+        run.font.size = docx.shared.Pt(14)
+
+        # Crie uma resposta HTTP com o conteúdo do documento Word
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="relatorio_passeio_barco.docx"'
+        doc.save(response)
+
+        return response
+
+    gerar_relatorio_passeio_barco.short_description = "Gerar Relatório Passeio de Barco"
 
 
 
@@ -145,8 +339,14 @@ class PagamentoAdmin(admin.ModelAdmin):
         "congressista",
         "data_pagamento",
         "valor_parcela",
+        "categoria",
         "numero_da_parcela",
         "get_valor_lote",
+    ]
+    list_filter = [
+        "congressista",
+        "data_pagamento",        
+        "categoria",
     ]
     ordering = ["congressista"]
 
@@ -154,6 +354,9 @@ class PagamentoAdmin(admin.ModelAdmin):
         return obj.congressista.lote.valor_unitario
 
     get_valor_lote.short_description = 'Valor do Lote'
+
+
+
 
 admin.site.register(Pagamento, PagamentoAdmin)
 
@@ -174,11 +377,146 @@ class StatusPagamentoFilter(admin.SimpleListFilter):
             return queryset.filter(valor_restante=0)
 
 
+class EntradaAdmin(admin.ModelAdmin):
+    list_display = ["descricao", "ano","quantidade","valor_total_entrada"]
+    list_filter = ["ano"]
+    search_fields = ["descricao"]
+    ordering = ["descricao"]
+    change_list_template = "congressita/change_list_entradas.html"
+
+
+    def save_model(self, request, obj, form, change):
+        obj.valor_total_entrada = obj.valor_unitario * obj.quantidade
+        obj.save()
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_saidas=Sum('valor_total_entrada'))
+        return queryset
+
+    def get_total_entradas(self, obj):
+        return Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+
+    get_total_entradas.admin_order_field = 'get_total_entradas'
+    get_total_entradas.short_description = 'Total Entradas'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        get_total_entradas = (
+            Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+        )
+
+        response.context_data["get_total_entradas"] = get_total_entradas
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
+
+class SaidaAdmin(admin.ModelAdmin):
+    list_display = ["descricao", "quantidade", "ano", "valor_total_saida" ]
+    list_filter = ["ano"]
+    search_fields = ["descricao", ]
+    ordering = ["descricao"]
+    change_list_template = "congressita/change_list_saidas.html"
+
+    def save_model(self, request, obj, form, change):
+        obj.valor_total_saida = obj.valor_unitario * obj.quantidade
+        obj.save()
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_saidas=Sum('valor_total_saida'))
+        return queryset
+
+    def get_total_saida(self, obj):
+        return Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+
+    get_total_saida.admin_order_field = 'get_total_saida'
+    get_total_saida.short_description = 'Total Saidas'
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+        get_total_saida = (
+            Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+        )
+
+        response.context_data["get_total_saida"] = get_total_saida
+
+        return response
+
+    class Media:
+        js = ("admin/js/jquery.mask.min.js", "admin/js/custon.js", "jquery.js", "admin/js/desativar_fka_pessoa.js")
+
+
+admin.site.register(Entrada, EntradaAdmin)
+admin.site.register(Saida, SaidaAdmin)
+
+
+
+
+class CaixaAdmin(admin.ModelAdmin):
+   
+    readonly_fields = ['congressitas', 'entradas','saidas','saldo']
+    change_list_template = "congressita/change_list_caixa.html"
+    list_display = ['congressitas', 'entradas','saidas','saldo']
+    
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+    def changelist_view(self, request, extra_context=None):
+            
+            response = super().changelist_view(request, extra_context=extra_context)
+            try:
+                qs = response.context_data["cl"].queryset
+            except (AttributeError, KeyError):
+                return response
+
+            total_lote = Congressista.objects.aggregate(total_lote=Sum('lote__valor_unitario'))['total_lote'] or 0
+            categoria_ids =  [7,8,9]  
+            valor_total_categoria_8 = Pagamento.objects.filter(congressista__categoria__in=categoria_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
+            bailes_ids =  [2,3]
+            valor_total_baile = Pagamento.objects.filter(congressista__categoria__in=bailes_ids).aggregate(total=Sum('valor_parcela'))['total'] or 0
+            congresso_id =  [1,]
+            valor_total_congresso = Pagamento.objects.filter(congressista__categoria__in=congresso_id).aggregate(total=Sum('valor_parcela'))['total'] or 0
+
+            get_total_parcelas = Congressista.objects.aggregate(total_parcelas=Sum('pagamento__valor_parcela'))[
+                'total_parcelas']
+            get_total_entradas= (
+                Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
+            )
+            get_total_saida = (
+                Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
+            )
+            passeio_de_barco = Entrada.objects.filter(id__in=[4, 5, 6]).aggregate(total=Sum("valor_total_entrada"))['total'] or 0
+
+            saldo = Decimal(get_total_parcelas or 0) + Decimal(get_total_entradas or 0) - Decimal(get_total_saida or 0)
+
+            response.context_data["total_lote"] = total_lote
+            response.context_data["valor_total_categoria_8"] = valor_total_categoria_8
+            response.context_data["valor_total_baile"] = valor_total_baile
+            response.context_data["valor_total_congresso"] = valor_total_congresso
+            response.context_data["get_total_parcelas"] = get_total_parcelas
+            response.context_data["get_total_entradas"] = get_total_entradas
+            response.context_data["get_total_saida"] = get_total_saida  
+            response.context_data["passeio_de_barco"] = passeio_de_barco  
+            response.context_data["saldo"] = saldo  
+    
+
+            return response
 
 
 
 
 
-
-
-
+admin.site.register(Caixa, CaixaAdmin)

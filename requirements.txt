@@ -1,0 +1,15 @@
+asgiref==3.7.2
+Django==5.0.6
+django-admin-list-filter-dropdown==1.0.3
+django-environ==0.11.2
+django-jazzmin==2.6.0
+et-xmlfile==1.1.0
+lxml==4.9.3
+openpyxl==3.1.2
+Pillow==10.0.0
+psycopg==3.1.9
+python-docx==0.8.11
+python-dotenv==1.0.1
+sqlparse==0.4.4
+typing_extensions==4.6.3
+validate-docbr==1.10.0
