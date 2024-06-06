@@ -141,7 +141,7 @@
                                                         <strong>Valor Total de Saídas:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="400px">
-                                                        <strong class="text-danger">R$ {{ get_total_saida }}</strong>
+                                                        <strong class="text-danger" id="saldoAmount">R$ {{ get_total_saida }}</strong>
                                                     </td>
                                                 </tr>
                                                     <td></td>
@@ -152,7 +152,7 @@
                                                         <strong>Valor Total dos Pagamentos:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="600px">
-                                                        <strong>R$ {{ get_total_parcelas }}</strong>
+                                                        <strong id="saldoAmount">R$ {{ get_total_parcelas }}</strong>
                                                     </td>
                                                 </tr>                                              
                                                 
@@ -161,7 +161,11 @@
                                                         <strong>Saldo Em Caixa Atualizado:</strong>
                                                     </td>
                                                     <td class="total-cell text-right" width="400px">
-                                                        <strong id="saldoAmount">R$ {{ saldo }}</strong>
+                                                        {% if saldo >= 0 %}
+                                                            <strong id="saldoAmount" class="text-success">R$ {{ saldo|floatformat:2 }}</strong>
+                                                        {% else %}
+                                                            <strong id="saldoAmount" class="text-danger">R$ {{ saldo|floatformat:2 }}</strong>
+                                                        {% endif %}
                                                     </td>
                                                 </tr>
                                             </tbody>

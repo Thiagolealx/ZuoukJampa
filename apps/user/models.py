@@ -104,11 +104,11 @@ class Congressista(models.Model):
         valor_parcelas = self.pagamento_set.aggregate(total=Sum('valor_parcela'))['total'] or 0
         return valor_total - valor_parcelas
 
-    def status_pagamento(self):
-        if self.valor_restante == 0:
-            return 'Pago'
-        else:
-            return 'Pendente'
+    # def status_pagamento(self):
+    #     if self.valor_restante <= 0:
+    #         return 'Pago'
+    #     else:
+    #         return 'Pendente'
 
     def atualizar_proxima_parcela(self):
         if self.pagamento_set.exists():

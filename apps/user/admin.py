@@ -118,7 +118,7 @@ class CongressistaAdmin(admin.ModelAdmin):
 
     def exibir_status_pagamento(self, obj):
         valor_restante = obj.get_valor_restante()
-        if abs(valor_restante) < 0.01:  # Ajuste a tolerância conforme necessário
+        if valor_restante <= 0:  # Ajuste a tolerância conforme necessário
             return format_html('<span style="color: green;">Pago</span>')
         else:
             return format_html('<span style="color: red;">Pendente</span>')
