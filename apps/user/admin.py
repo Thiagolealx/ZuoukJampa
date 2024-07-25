@@ -378,7 +378,7 @@ class StatusPagamentoFilter(admin.SimpleListFilter):
 
 
 class EntradaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "ano","quantidade","valor_total_entrada"]
+    list_display = ["descricao", "ano","quantidade","valor_total_entrada","data_entrada"]
     list_filter = ["ano"]
     search_fields = ["descricao"]
     ordering = ["descricao"]
@@ -419,7 +419,7 @@ class EntradaAdmin(admin.ModelAdmin):
 
 
 class SaidaAdmin(admin.ModelAdmin):
-    list_display = ["descricao", "quantidade", "ano", "valor_total_saida" ]
+    list_display = ["descricao", "quantidade", "ano", "valor_total_saida", "data_saida" ]
     list_filter = ["ano"]
     search_fields = ["descricao", ]
     ordering = ["descricao"]

@@ -167,6 +167,7 @@ class Entrada(models.Model):
     # nome_empresa = models.CharField(max_length=100)
     comprovante = models.ImageField(upload_to='comprovantes/', blank=True, null=False)
     valor_total_entrada = models.FloatField(blank=True, null=False, editable=False)
+    data_entrada = models.DateField(auto_now_add=True)
 
     def calcular_valor_total(self):
         
@@ -193,6 +194,7 @@ class Saida(models.Model):
     # nome_empresa = models.CharField(max_length=100,blank=True, null=True)
     comprovante = models.ImageField(upload_to='comprovantes/',blank=True, null=False)
     valor_total_saida = models.FloatField(blank=True, null=False, editable=False)
+    data_saida = models.DateField(auto_now_add=True)
 
     def calcular_valor_total(self):
         if self.valor_unitario is not None and self.quantidade is not None:
