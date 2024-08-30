@@ -188,7 +188,7 @@ class CongressistaAdmin(admin.ModelAdmin):
         return response
 # Criação do relatorio
 
-    actions = ['gerar_relatorio', 'gerar_relatorio_excel','gerar_relatorio_passeio_barco']
+    actions = ['gerar_relatorio', 'gerar_relatorio_lote','gerar_relatorio_passeio_barco']
     def gerar_relatorio(self, request, queryset):
         # Crie um documento Word
         doc = docx.Document()
@@ -233,42 +233,55 @@ class CongressistaAdmin(admin.ModelAdmin):
 
     gerar_relatorio.short_description = "Gerar Relatório"
 
-    def gerar_relatorio_excel(self, request, queryset):
-        # Obtém a UF selecionada do request GET
-        uf_filter = request.GET.get('uf')
+    def gerar_relatorio_lote(self, request, queryset):
+    # Crie um documento Word
+        doc = docx.Document()
 
-        # Crie um novo workbook do Excel
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = 'Relatório de Congressistas'
+        # Adicione um título
+        doc.add_heading('Relatório de Congressistas', level=1)
 
-        # Crie os cabeçalhos das colunas
-        headers = ['Número', 'Nome Completo', 'UF']
-        for col_num, header in enumerate(headers, 1):
-            col_letter = get_column_letter(col_num)
-            ws[f"{col_letter}1"] = header
+        # Obtenha todas as categorias únicas
+        categorias = Categoria.objects.all()
 
-        # Filtra os congressistas com base na UF selecionada
-        congressistas = queryset.filter(uf=uf_filter) if uf_filter else queryset
+        # Itere sobre cada categoria
+        for categoria in categorias:
+            # Filtra os congressistas dessa categoria
+            congressistas = queryset.filter(categoria=categoria)
 
-        # Ordene os congressistas por nome completo
-        congressistas = congressistas.order_by('nome_completo')
+            # Adicione um título para a categoria
+            doc.add_heading(f'{categoria.tipo}', level=2)
 
-        # Preencha os dados dos congressistas
-        for row_num, congressista in enumerate(congressistas, 2):
-            ws[f"A{row_num}"] = row_num - 1  # Número
-            ws[f"B{row_num}"] = congressista.nome_completo  # Nome Completo
-            ws[f"C{row_num}"] = congressista.uf  # UF
-            ws[f"D{row_num}"] = congressista.lote.valor_unitario  # Valor
+            # Inicialize um contador
+            contador = 1
 
-        # Crie uma resposta HTTP com o conteúdo do arquivo Excel
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="relatorio_congressistas.xlsx"'
-        wb.save(response)
+            # Adicione os detalhes dos congressistas dessa categoria
+            for congressista in congressistas:
+                paragrafo = doc.add_paragraph()
+                paragrafo.add_run(f'  {contador}')
+                paragrafo.add_run(f' {congressista.nome_completo}')
+
+                # Adicione o lote ao qual o congressista pertence
+                if hasattr(congressista, 'lote'):
+                    paragrafo.add_run(f' - Lote: {congressista.lote}')
+
+                contador += 1
+
+        # Adicione o total de pessoas
+        total_pessoas = queryset.count()
+        paragrafo = doc.add_paragraph()
+        run = paragrafo.add_run(f'Total de pessoas: {total_pessoas}')
+        run.bold = True
+        run.font.size = docx.shared.Pt(14)
+
+        # Crie uma resposta HTTP com o conteúdo do documento Word
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = 'attachment; filename="relatorio.docx"'
+        doc.save(response)
 
         return response
 
-    gerar_relatorio_excel.short_description = "Gerar Relatório Excel"
+    gerar_relatorio.short_description = "Gerar Relatório/ Lote"
+
 
     def gerar_relatorio_passeio_barco(self, request, queryset):
         # Crie um documento Word
