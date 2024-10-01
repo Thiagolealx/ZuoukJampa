@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.utils.html import format_html
 
 from .forms import CongressistaFormAdmin
-from .models import Lote, Categoria, Congressista, Pagamento, Entrada, Saida, Caixa
+from .models import Lote, Categoria, Congressista, Pagamento, Entrada, Saida, Caixa, CadastroGerais,Camisas
 from django.utils.translation import gettext_lazy as _
 from django.db.models import F
 from django.db.models import Sum
@@ -473,6 +473,58 @@ class SaidaAdmin(admin.ModelAdmin):
 
 admin.site.register(Entrada, EntradaAdmin)
 admin.site.register(Saida, SaidaAdmin)
+
+
+class CadastroGeraisAmin(admin.ModelAdmin):
+
+    list_display = ["descricao", "observacao","valor"]
+    list_filter = ["descricao"]
+    search_fields = ["descricao"]
+    ordering = ["descricao"]
+
+
+admin.site.register(CadastroGerais, CadastroGeraisAmin)
+
+
+
+from django.contrib import admin
+from .models import Camisas, CadastroGerais
+
+class CamisasAdmin(admin.ModelAdmin):
+    list_display = ('congressista', 'get_modelo_descricao', 'get_tipo_observacao', 'valor', 'observacao')
+    search_fields = ('congressista__nome', 'modelo__descricao', 'tipo__observacao')
+    list_filter = ('modelo', 'tipo')
+
+    readonly_fields = ('valor',)  # O campo valor será apenas leitura
+
+    def get_modelo_descricao(self, obj):
+        # Exibir a descrição do CadastroGerais associado ao campo 'modelo'
+        return obj.modelo.descricao if obj.modelo else None
+    get_modelo_descricao.short_description = 'Descrição do Modelo'
+
+    def get_tipo_observacao(self, obj):
+        # Exibir a observação do CadastroGerais associado ao campo 'tipo'
+        return obj.tipo.observacao if obj.tipo else None
+    get_tipo_observacao.short_description = 'Observação do Tipo'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'modelo':
+            # Exibir a descrição do modelo no campo de seleção
+            formfield.label_from_instance = lambda obj: f"{obj.descricao}"
+        if db_field.name == 'tipo':
+            # Exibir a observação do tipo no campo de seleção
+            formfield.label_from_instance = lambda obj: f"{obj.observacao}"
+        return formfield
+
+    def save_model(self, request, obj, form, change):
+        # Atualizar o valor automaticamente com base no modelo ao salvar
+        if obj.modelo:
+            obj.valor = obj.modelo.valor
+        super().save_model(request, obj, form, change)
+
+# Registro do modelo Camisas com a classe CamisasAdmin
+admin.site.register(Camisas, CamisasAdmin)
 
 
 

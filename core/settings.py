@@ -51,7 +51,8 @@ JAZZMIN_SETTINGS = {
             'user.Pagamento': 'fas fa-university',
             'user.Caixa': 'fas fa-user-tie',
             'user.Entrada': 'fas fa-book-open',
-            'user.Saida': 'fas fa-book'
+            'user.Saida': 'fas fa-book',
+            'user.CadastroGerais': 'fas fa-book'
 
     },
 "order_with_respect_to": ["usuario","congressista","categoria","lote"]
