@@ -496,6 +496,8 @@ class CamisasAdmin(admin.ModelAdmin):
     list_filter = ('modelo', 'tipo')
 
     readonly_fields = ('valor',)  # O campo valor será apenas leitura
+    change_list_template = "congressita/change_list_camisa.html"  # Usar um template customizado para o changelist
+
 
     def get_modelo_descricao(self, obj):
         # Exibir a descrição do CadastroGerais associado ao campo 'modelo'
@@ -523,10 +525,37 @@ class CamisasAdmin(admin.ModelAdmin):
             obj.valor = obj.modelo.valor
         super().save_model(request, obj, form, change)
 
+    def get_queryset(self, request):
+        # Customizar o queryset para incluir a soma total dos valores
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(total_valor=Sum('valor'))
+        return queryset
+
+    def total_valores(self, obj):
+        # Somar todos os valores das camisas no banco de dados
+        total = Camisas.objects.aggregate(total_valor=Sum('valor'))['total_valor'] or 0
+        return f"R$ {total:.2f}"
+    total_valores.short_description = 'Total de Valores'
+
+    def changelist_view(self, request, extra_context=None):
+        # Personalizar o changelist para incluir o total de valores
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data["cl"].queryset
+        except (AttributeError, KeyError):
+            return response
+
+        total_valor = Camisas.objects.aggregate(total_valor=Sum('valor'))['total_valor'] or 0
+
+        if extra_context is None:
+            extra_context = {}
+        extra_context['total_valores'] = f"R$ {total_valor:.2f}"  # Passar o total para o template
+
+        response.context_data.update(extra_context)
+        return response
+
 # Registro do modelo Camisas com a classe CamisasAdmin
 admin.site.register(Camisas, CamisasAdmin)
-
-
 
 
 class CaixaAdmin(admin.ModelAdmin):

@@ -273,6 +273,10 @@ class Camisas(models.Model):
         verbose_name = "Camisa"
         verbose_name_plural = "Camisas"
 
+    @classmethod
+    def somar_valores(cls):
+        return cls.objects.aggregate(total_valor=Sum('valor'))['total_valor'] or 0
+
     def __str__(self):
         return f"{self.congressista} - {self.modelo.descricao if self.modelo else 'Sem Modelo'}"
 
