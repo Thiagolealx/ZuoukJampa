@@ -594,7 +594,14 @@ class CaixaAdmin(admin.ModelAdmin):
             )
             passeio_de_barco = Entrada.objects.filter(id__in=[4, 5, 6]).aggregate(total=Sum("valor_total_entrada"))['total'] or 0
 
-            saldo = Decimal(get_total_parcelas or 0) + Decimal(get_total_entradas or 0) - Decimal(get_total_saida or 0)
+            
+
+            #Somar os valores das camisas
+            total_camisas = Camisas.objects.aggregate(Sum('valor'))['valor__sum'] or 0
+
+            # Calcular o saldo
+            saldo = Decimal(get_total_parcelas) + Decimal(get_total_entradas) - Decimal(get_total_saida) + Decimal(total_camisas)
+
 
             response.context_data["total_lote"] = total_lote
             response.context_data["valor_total_categoria_8"] = valor_total_categoria_8
@@ -604,6 +611,7 @@ class CaixaAdmin(admin.ModelAdmin):
             response.context_data["get_total_entradas"] = get_total_entradas
             response.context_data["get_total_saida"] = get_total_saida  
             response.context_data["passeio_de_barco"] = passeio_de_barco  
+            response.context_data["total_camisas"] = total_camisas  # Total das camisas
             response.context_data["saldo"] = saldo  
     
 

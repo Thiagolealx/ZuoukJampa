@@ -208,19 +208,22 @@ class Saida(models.Model):
     def __str__(self):
         return self.descricao
 
-class Caixa (models.Model):    
+class Caixa(models.Model):    
 
     @property
     def congressitas(self):
         return Pagamento.objects.aggregate(total=Sum('valor_parcela'))['total'] or 0
+
     @property
     def day_user(self):
         categoria_id = [8,9]  
-        return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 @property
+        return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0
+
     @property
     def baile(self):
         categoria_id = [2,3]  
         return self.pagamento_set.filter(categoria=categoria_id).aggregate(total=Sum('valor_parcela'))['total'] or 0 
+
     @property
     def congressista(self):
         categoria_id = [1,]  
@@ -229,22 +232,27 @@ class Caixa (models.Model):
     @property
     def passeio(self):
         return Entrada.objects.filter(id__in=[4, 5, 6]).aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
-        
+
     @property
     def entradas(self):
         return Entrada.objects.all().aggregate(Sum('valor_total_entrada'))['valor_total_entrada__sum']
-    
+
     @property
     def saidas(self):
         return Saida.objects.all().aggregate(Sum('valor_total_saida'))['valor_total_saida__sum']
 
     @property
-    def saldo(self):
-        return Decimal(self.congressitas) + Decimal(self.entradas) - Decimal(self.saidas)
+    def camisas_total(self):
+        # Soma os valores de todas as camisas no banco de dados
+        return Camisas.objects.aggregate(total_valor=Sum('valor'))['total_valor'] or 0
 
-    
+    @property
+    def saldo(self):
+        return Decimal(self.congressitas) + Decimal(self.entradas) - Decimal(self.saidas) + Decimal(self.camisas_total)
+
     def __str__(self):
         return self.congressitas
+
 
 
 
