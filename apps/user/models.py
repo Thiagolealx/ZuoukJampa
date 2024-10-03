@@ -271,9 +271,19 @@ class CadastroGerais(models.Model):
 
 
 class Camisas(models.Model):
+
+    TAMANHO =(
+        ('PP', 'PP'),
+        ('P', 'P'),
+        ('M', 'M'),
+        ('G', 'G'),
+        ('GG', 'GG'),
+    )
+
     congressista = models.ForeignKey(Congressista, on_delete=models.CASCADE)
     modelo = models.ForeignKey(CadastroGerais, on_delete=models.CASCADE, related_name='camisas_modelo')
     tipo = models.ForeignKey(CadastroGerais, on_delete=models.CASCADE, related_name='camisas_tipo')
+    tamanho = models.CharField(max_length=2, choices=TAMANHO)
     valor = models.DecimalField(max_digits=10, decimal_places=2)  # Valor monetário
     observacao = models.CharField(max_length=100, blank=True, null=True)  # Limitar a 100 caracteres
 
@@ -286,13 +296,6 @@ class Camisas(models.Model):
         return cls.objects.aggregate(total_valor=Sum('valor'))['total_valor'] or 0
 
     def __str__(self):
+
         return f"{self.congressista} - {self.modelo.descricao if self.modelo else 'Sem Modelo'}"
-
-
-
-
-
-
-
-
 

@@ -482,32 +482,26 @@ class CadastroGeraisAmin(admin.ModelAdmin):
     search_fields = ["descricao"]
     ordering = ["descricao"]
 
-
 admin.site.register(CadastroGerais, CadastroGeraisAmin)
 
-
-
-from django.contrib import admin
-from .models import Camisas, CadastroGerais
-
 class CamisasAdmin(admin.ModelAdmin):
-    list_display = ('congressista', 'get_modelo_descricao', 'get_tipo_observacao', 'valor', 'observacao')
+    list_display = ('congressista', 'get_modelo_descricao', 'get_observacoes_distintas', 'tamanho', 'valor', 'observacao')
     search_fields = ('congressista__nome', 'modelo__descricao', 'tipo__observacao')
     list_filter = ('modelo', 'tipo')
 
     readonly_fields = ('valor',)  # O campo valor será apenas leitura
     change_list_template = "congressita/change_list_camisa.html"  # Usar um template customizado para o changelist
 
-
     def get_modelo_descricao(self, obj):
         # Exibir a descrição do CadastroGerais associado ao campo 'modelo'
         return obj.modelo.descricao if obj.modelo else None
     get_modelo_descricao.short_description = 'Descrição do Modelo'
 
-    def get_tipo_observacao(self, obj):
-        # Exibir a observação do CadastroGerais associado ao campo 'tipo'
-        return obj.tipo.observacao if obj.tipo else None
-    get_tipo_observacao.short_description = 'Observação do Tipo'
+    def get_observacoes_distintas(self, obj):
+        # Obter apenas observações distintas para evitar duplicidade na exibição
+        distinct_observacoes = Camisas.objects.filter(modelo=obj.modelo).values_list('tipo__observacao', flat=True).distinct()
+        return ", ".join(distinct_observacoes)
+    get_observacoes_distintas.short_description = 'Observação do Tipo'
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         formfield = super().formfield_for_foreignkey(db_field, request, **kwargs)
@@ -515,7 +509,8 @@ class CamisasAdmin(admin.ModelAdmin):
             # Exibir a descrição do modelo no campo de seleção
             formfield.label_from_instance = lambda obj: f"{obj.descricao}"
         if db_field.name == 'tipo':
-            # Exibir a observação do tipo no campo de seleção
+            # Exibir apenas observações únicas no campo de seleção de tipo
+            formfield.queryset = CadastroGerais.objects.distinct('observacao')
             formfield.label_from_instance = lambda obj: f"{obj.observacao}"
         return formfield
 
@@ -556,6 +551,7 @@ class CamisasAdmin(admin.ModelAdmin):
 
 # Registro do modelo Camisas com a classe CamisasAdmin
 admin.site.register(Camisas, CamisasAdmin)
+
 
 
 class CaixaAdmin(admin.ModelAdmin):
@@ -622,3 +618,12 @@ class CaixaAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Caixa, CaixaAdmin)
+
+
+
+
+
+
+
+
+
